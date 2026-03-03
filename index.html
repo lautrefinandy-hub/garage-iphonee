@@ -107,22 +107,75 @@ function addCar(){
 }
 
 function displayCars(){
-  const con=document.getElementById("cars"); con.innerHTML="";
+  const con=document.getElementById("cars"); 
+  con.innerHTML="";
   const f=document.getElementById("filterMarque").value.toLowerCase();
   const s=document.getElementById("searchBar").value.toLowerCase();
   cars.sort((a,b)=>b.date-a.date);
+
   cars.forEach((car,i)=>{
     if(f&&car.marque.toLowerCase()!==f) return;
     if(s&&!(car.marque.toLowerCase()+" "+car.plaque.toLowerCase()).includes(s)) return;
-    const div=document.createElement("div"); div.className="car glass";
-    div.innerHTML=`${car.photo?`<img src="${car.photo}">`:``}<h3>${car.marque} ${car.modele}</h3>
-    <p>🆔 Plaque : <input type="text" value="${car.plaque}" onchange="cars[${i}].plaque=this.value.toUpperCase(); localStorage.setItem('cars',JSON.stringify(cars)); displayCars();"></p>
-    <p>${car.taches}</p>
-    <small>${new Date(car.date).toLocaleDateString()}</small>
-    <button class="deleteBtn" onclick="cars.splice(${i},1); localStorage.setItem('cars',JSON.stringify(cars)); displayCars();">Supprimer</button>`;
+
+    const div=document.createElement("div"); 
+    div.className="car glass";
+
+    div.innerHTML=`
+      ${car.photo?`<img src="${car.photo}">`:``}
+      
+      <div id="view-${i}">
+        <h3>${car.marque} ${car.modele}</h3>
+        <p>🆔 Plaque : ${car.plaque}</p>
+        <p>${car.taches}</p>
+        <small>${new Date(car.date).toLocaleDateString()}</small>
+        <br><br>
+        <button onclick="editCar(${i})">✏️ Modifier</button>
+        <button class="deleteBtn" onclick="deleteCar(${i})">Supprimer</button>
+      </div>
+
+      <div id="edit-${i}" style="display:none;">
+        <input type="text" id="edit-marque-${i}" value="${car.marque}">
+        <input type="text" id="edit-modele-${i}" value="${car.modele}">
+        <input type="text" id="edit-plaque-${i}" value="${car.plaque}">
+        <textarea id="edit-taches-${i}">${car.taches}</textarea>
+        <br>
+        <button onclick="saveEdit(${i})">💾 Sauvegarder</button>
+        <button onclick="cancelEdit(${i})">Annuler</button>
+      </div>
+    `;
+
     con.appendChild(div);
   });
+
   updateFilterOptions();
+}
+function editCar(i){
+  document.getElementById(`view-${i}`).style.display="none";
+  document.getElementById(`edit-${i}`).style.display="block";
+}
+
+function cancelEdit(i){
+  document.getElementById(`edit-${i}`).style.display="none";
+  document.getElementById(`view-${i}`).style.display="block";
+}
+
+function saveEdit(i){
+  cars[i].marque=document.getElementById(`edit-marque-${i}`).value;
+  cars[i].modele=document.getElementById(`edit-modele-${i}`).value;
+  cars[i].plaque=document.getElementById(`edit-plaque-${i}`).value.toUpperCase();
+  cars[i].taches=document.getElementById(`edit-taches-${i}`).value;
+  
+  localStorage.setItem("cars",JSON.stringify(cars));
+  displayCars();
+}
+
+function deleteCar(i){
+  if(confirm("Supprimer cette voiture ?")){
+    cars.splice(i,1);
+    localStorage.setItem("cars",JSON.stringify(cars));
+    displayCars();
+  }
+}
 }
 
 function updateFilterOptions(){
