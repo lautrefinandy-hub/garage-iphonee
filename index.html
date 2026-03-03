@@ -1,350 +1,193 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Garage Andy</title>
+<title>Garage iPhone PRO</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
-body{
-  font-family:Arial;
-  background:#0f172a;
-  color:white;
-  margin:0;
-  padding:15px;
-}
-
-h1{text-align:center;}
-
-input, select{
-  width:100%;
-  padding:10px;
-  margin:5px 0;
-  border-radius:10px;
-  border:none;
-}
-
-button{
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  margin:5px 0;
-}
-
-.addBtn{background:#22c55e;color:white;}
-.deleteBtn{background:#ef4444;color:white;}
-.editBtn{background:#3b82f6;color:white;}
-.statBtn{background:#f59e0b;color:white;}
-
-.car{
-  background:#1e293b;
-  padding:15px;
-  border-radius:15px;
-  margin:10px 0;
-}
-
-/* SLIDE MENU */
-#taskMenu{
-  position:fixed;
-  bottom:-100%;
-  left:0;
-  width:100%;
-  background:#1e293b;
-  padding:20px;
-  border-radius:20px 20px 0 0;
-  transition:0.3s;
-  max-height:70%;
-  overflow-y:auto;
-}
-
-#taskMenu.active{
-  bottom:0;
-}
-
-.overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.5);
-  display:none;
-}
-
-.overlay.active{display:block;}
-
-.tab{
-  display:none;
-}
-
-.tab.active{
-  display:block;
-}
+body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial; margin:0; padding:10px; background:#1c1c1c; color:white;}
+h2,h3{text-align:center;margin:5px;}
+.tabs{display:flex;margin-bottom:10px;}
+.tabBtn{flex:1;padding:12px;background:rgba(255,255,255,0.1);border:none;color:white;font-weight:bold;cursor:pointer;}
+.tabBtn.active{background:rgba(255,255,255,0.25);}
+.content{display:none;}
+.content.active{display:block;}
+.glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:10px;border-radius:12px;margin:10px 0;}
+.tacheContainer{max-height:200px;overflow-y:auto;margin:5px 0;padding:5px;border-radius:12px;background:rgba(255,255,255,0.05);}
+.tacheBtn{display:block;margin:4px 0;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.1);color:white;cursor:pointer;}
+.tacheBtn.checked{background:#27ae60;color:black;}
+button.addBtn{background:#27ae60;color:white;padding:10px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
+button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
+.car{background:rgba(255,255,255,0.05);padding:10px;border-radius:12px;margin:10px 0;}
+.car img{width:100%;border-radius:10px;}
+.hidden{display:none;}
 </style>
 </head>
-
 <body>
 
-<h1>🚗 Garage Andy</h1>
+<h2>🚗 Garage iPhone PRO</h2>
 
-<div id="mainTab" class="tab active">
+<div class="tabs">
+  <button class="tabBtn active" onclick="switchTab(0)">Garage</button>
+  <button class="tabBtn" onclick="switchTab(1)">Statistiques</button>
+  <button class="tabBtn" onclick="switchTab(2)">Calendrier</button>
+</div>
 
+<div class="content active">
+
+<div class="glass">
+<input type="file" id="photo">
 <input type="text" id="marque" placeholder="Marque">
 <input type="text" id="modele" placeholder="Modèle">
 <input type="text" id="plaque" placeholder="Plaque">
 
-<button class="addBtn" onclick="openTaskMenu()">Choisir tâches</button>
-<button class="statBtn" onclick="showStats()">📊 Statistiques</button>
+<p>📅 Date réparation :</p>
+<input type="date" id="dateRep">
 
-<hr>
+<p>✅ Tâches :</p>
+<div class="tacheContainer" id="tachesContainer"></div>
 
-<input type="text" id="search" placeholder="Recherche">
-<select id="filterMarque">
-  <option value="">Toutes les marques</option>
-</select>
+<input type="text" id="tachesAutres" placeholder="Autres tâches séparées par des virgules">
+<button class="addBtn" onclick="addCar()">Ajouter voiture</button>
+</div>
 
 <div id="cars"></div>
 
 </div>
 
-<div id="statsTab" class="tab">
-  <button onclick="showMain()">⬅ Retour</button>
-  <div id="stats"></div>
+<div class="content">
+<h3>📊 Statistiques</h3>
+<canvas id="chartTaches"></canvas>
 </div>
 
-<div class="overlay" id="overlay" onclick="closeTaskMenu()"></div>
-
-<div id="taskMenu">
-  <h3>Tâches</h3>
-
-  <div id="taskList"></div>
-
-  <input type="text" id="customTask" placeholder="Autre tâche">
-  <button onclick="addSelectedTasks()" class="addBtn">Valider</button>
+<div class="content">
+<h3>📅 Calendrier des réparations</h3>
+<div id="calendar"></div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+let cars = JSON.parse(localStorage.getItem("cars"))||[];
+let tachesPredefinies=["Vidange et Filtre à Huile","Batterie","Plaquettes de Frein","Disque de Frein","Pneu Avant","Pneu Arrière","Filtre à air","Filtre à Gasoil","Filtre Habitacle"];
 
-let cars = JSON.parse(localStorage.getItem("garageCars")) || [];
-
-const predefinedTasks = [
-  "Vidange",
-  "Freins",
-  "Distribution",
-  "Embrayage",
-  "Pneus",
-  "Révision",
-  "Diagnostic",
-  "Batterie"
-];
-
-function save(){
-  localStorage.setItem("garageCars", JSON.stringify(cars));
+function switchTab(i){
+document.querySelectorAll(".tabBtn").forEach((b,idx)=>b.classList.toggle("active",idx===i));
+document.querySelectorAll(".content").forEach((c,idx)=>c.classList.toggle("active",idx===i));
+if(i===1) updateCharts();
+if(i===2) updateCalendar();
 }
 
-/* ---------- SLIDE MENU ---------- */
-
-function openTaskMenu(){
-  const list=document.getElementById("taskList");
-  list.innerHTML="";
-  predefinedTasks.forEach((t,i)=>{
-    list.innerHTML+=`
-      <label>
-        <input type="checkbox" value="${t}"> ${t}
-      </label><br>
-    `;
-  });
-  document.getElementById("taskMenu").classList.add("active");
-  document.getElementById("overlay").classList.add("active");
+function renderTaches(){
+const container=document.getElementById("tachesContainer");
+container.innerHTML="";
+tachesPredefinies.forEach(t=>{
+const btn=document.createElement("button");
+btn.className="tacheBtn";
+btn.innerText=t;
+btn.dataset.value=t;
+btn.onclick=()=>btn.classList.toggle("checked");
+container.appendChild(btn);
+});
 }
 
-function closeTaskMenu(){
-  document.getElementById("taskMenu").classList.remove("active");
-  document.getElementById("overlay").classList.remove("active");
+function addCar(){
+const marque=document.getElementById("marque").value;
+const modele=document.getElementById("modele").value;
+const plaque=document.getElementById("plaque").value;
+const dateRep=document.getElementById("dateRep").value || new Date().toISOString().split("T")[0];
+const tachesCochees=Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b=>b.dataset.value);
+const tachesAutres=document.getElementById("tachesAutres").value.split(",").map(t=>t.trim()).filter(t=>t);
+const toutesTaches=[...tachesCochees,...tachesAutres];
+
+if(!marque||!modele||toutesTaches.length===0){alert("Remplis tout !");return;}
+
+let car=cars.find(c=>c.plaque===plaque);
+if(!car){
+car={marque,modele,plaque,reparations:[]};
+cars.push(car);
 }
 
-function addSelectedTasks(){
+car.reparations.push({date:dateRep,taches:toutesTaches});
 
-  const marque=document.getElementById("marque").value.trim();
-  const modele=document.getElementById("modele").value.trim();
-  const plaque=document.getElementById("plaque").value.trim().toUpperCase();
-
-  if(!marque || !plaque){
-    alert("Champs manquants");
-    return;
-  }
-
-  let tasks=[];
-  document.querySelectorAll("#taskList input:checked").forEach(cb=>{
-    tasks.push(cb.value);
-  });
-
-  const custom=document.getElementById("customTask").value.trim();
-  if(custom) tasks.push(custom);
-
-  if(tasks.length===0){
-    alert("Aucune tâche sélectionnée");
-    return;
-  }
-
-  let existing=cars.find(c=>c.plaque===plaque);
-
-  if(existing){
-    tasks.forEach(t=>{
-      existing.historique.push({tache:t,date:Date.now()});
-    });
-  } else {
-    cars.push({
-      marque,
-      modele,
-      plaque,
-      historique:tasks.map(t=>({tache:t,date:Date.now()}))
-    });
-  }
-
-  save();
-  closeTaskMenu();
-  clearInputs();
-  displayCars();
+localStorage.setItem("cars",JSON.stringify(cars));
+displayCars();
+updateCalendar();
 }
-
-function clearInputs(){
-  document.getElementById("marque").value="";
-  document.getElementById("modele").value="";
-  document.getElementById("plaque").value="";
-  document.getElementById("customTask").value="";
-}
-
-/* ---------- DISPLAY ---------- */
 
 function displayCars(){
-
-  const container=document.getElementById("cars");
-  container.innerHTML="";
-
-  const search=document.getElementById("search").value.toLowerCase();
-  const filter=document.getElementById("filterMarque").value.toLowerCase();
-
-  let marquesSet=new Set();
-
-  cars.forEach((car,index)=>{
-
-    marquesSet.add(car.marque);
-
-    if(filter && car.marque.toLowerCase()!==filter) return;
-    if(search && !(car.marque+" "+car.plaque).toLowerCase().includes(search)) return;
-
-    let histHTML="";
-    car.historique.forEach(h=>{
-      histHTML+=`<p>🔧 ${h.tache} - ${new Date(h.date).toLocaleDateString()}</p>`;
-    });
-
-    const div=document.createElement("div");
-    div.className="car";
-    div.innerHTML=`
-      <h3>${car.marque} ${car.modele||""}</h3>
-      <p>🆔 ${car.plaque}</p>
-      ${histHTML}
-      <button class="editBtn" onclick="addExtraTask(${index})">✏️ Ajouter tâche</button>
-      <button class="deleteBtn" onclick="deleteCar(${index})">Supprimer</button>
-    `;
-
-    container.appendChild(div);
-  });
-
-  updateFilter(marquesSet);
+const con=document.getElementById("cars");
+con.innerHTML="";
+cars.forEach((car,i)=>{
+const div=document.createElement("div");
+div.className="car glass";
+div.innerHTML=`
+<h3>${car.marque} ${car.modele}</h3>
+<p>🆔 ${car.plaque}</p>
+<button class="addBtn" onclick="toggleHistory(${i})">📂 Voir Historique</button>
+<div id="history${i}" class="hidden">
+${car.reparations.map(rep=>`
+<div style="margin:5px 0;padding:5px;background:rgba(255,255,255,0.05);border-radius:8px;">
+<b>${rep.date}</b>
+<p>${rep.taches.join(", ")}</p>
+</div>
+`).join("")}
+</div>
+<button class="deleteBtn" onclick="deleteCar(${i})">Supprimer</button>
+`;
+con.appendChild(div);
+});
 }
 
-function updateFilter(set){
-  const select=document.getElementById("filterMarque");
-  const current=select.value;
-  select.innerHTML='<option value="">Toutes les marques</option>';
-  set.forEach(m=>{
-    select.innerHTML+=`<option value="${m}">${m}</option>`;
-  });
-  select.value=current;
+function toggleHistory(i){
+document.getElementById("history"+i).classList.toggle("hidden");
 }
 
-function addExtraTask(index){
-  openTaskMenu();
-  document.querySelector(".addBtn").onclick=function(){
-    let tasks=[];
-    document.querySelectorAll("#taskList input:checked").forEach(cb=>{
-      tasks.push(cb.value);
-    });
-    const custom=document.getElementById("customTask").value.trim();
-    if(custom) tasks.push(custom);
-
-    tasks.forEach(t=>{
-      cars[index].historique.push({tache:t,date:Date.now()});
-    });
-
-    save();
-    closeTaskMenu();
-    displayCars();
-  };
-}
-
-function deleteCar(index){
-  if(confirm("Supprimer ?")){
-    cars.splice(index,1);
-    save();
-    displayCars();
-  }
-}
-
-/* ---------- STATS TAB ---------- */
-
-function showStats(){
-  document.getElementById("mainTab").classList.remove("active");
-  document.getElementById("statsTab").classList.add("active");
-  updateStats();
-}
-
-function showMain(){
-  document.getElementById("statsTab").classList.remove("active");
-  document.getElementById("mainTab").classList.add("active");
-}
-
-function updateStats(){
-
-  let parJour={};
-  let parMois={};
-  let parType={};
-
-  cars.forEach(car=>{
-    car.historique.forEach(h=>{
-      const d=new Date(h.date);
-      const jour=d.toLocaleDateString();
-      const mois=(d.getMonth()+1)+"/"+d.getFullYear();
-
-      parJour[jour]=(parJour[jour]||0)+1;
-      parMois[mois]=(parMois[mois]||0)+1;
-      parType[h.tache]=(parType[h.tache]||0)+1;
-    });
-  });
-
-  let html="<h3>📊 Statistiques</h3>";
-
-  html+="<h4>Par jour</h4>";
-  for(let j in parJour) html+=`<p>${j} : ${parJour[j]}</p>`;
-
-  html+="<h4>Par mois</h4>";
-  for(let m in parMois) html+=`<p>${m} : ${parMois[m]}</p>`;
-
-  html+="<h4>Par type</h4>";
-  for(let t in parType) html+=`<p>${t} : ${parType[t]}</p>`;
-
-  document.getElementById("stats").innerHTML=html;
-}
-
-document.getElementById("search").addEventListener("input",displayCars);
-document.getElementById("filterMarque").addEventListener("change",displayCars);
-
+function deleteCar(i){
+cars.splice(i,1);
+localStorage.setItem("cars",JSON.stringify(cars));
 displayCars();
+updateCalendar();
+}
 
+function updateCharts(){
+const tachesData={};
+cars.forEach(c=>{
+c.reparations.forEach(rep=>{
+rep.taches.forEach(t=>{
+tachesData[t]=(tachesData[t]||0)+1;
+});
+});
+});
+new Chart(document.getElementById("chartTaches"),{
+type:'pie',
+data:{
+labels:Object.keys(tachesData),
+datasets:[{data:Object.values(tachesData)}]
+}
+});
+}
+
+function updateCalendar(){
+const cal=document.getElementById("calendar");
+cal.innerHTML="";
+let all=[];
+cars.forEach(c=>{
+c.reparations.forEach(rep=>{
+all.push({date:rep.date,text:`${c.marque} ${c.modele} - ${rep.taches.join(", ")}`});
+});
+});
+all.sort((a,b)=>new Date(a.date)-new Date(b.date));
+all.forEach(e=>{
+cal.innerHTML+=`
+<div style="margin:5px 0;padding:8px;background:rgba(255,255,255,0.05);border-radius:8px;">
+<b>${e.date}</b><br>${e.text}
+</div>`;
+});
+}
+
+renderTaches();
+displayCars();
+updateCalendar();
 </script>
-
 </body>
 </html>
