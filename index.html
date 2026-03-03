@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Garage iPhone Pro v5</title>
+<title>Garage Pro iPhone - Final</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
 body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial; margin:0; padding:10px; background:#1c1c1c; color:white; -webkit-tap-highlight-color: transparent;}
@@ -23,13 +23,11 @@ button.deleteBtn{background:#e74c3c;color:white;padding:10px;border:none;border-
 .car{background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;margin:15px 0; border: 1px solid rgba(255,255,255,0.1);}
 .car img{width:100%;border-radius:10px;margin-bottom:10px; object-fit: cover; max-height: 200px;}
 canvas{margin:15px 0;border-radius:12px;background:rgba(255,255,255,0.05);padding:10px; width:100% !important; height:auto !important;}
-
 .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; overflow-y:auto;}
 .modal-content { background:#2c2c2c; margin:10px auto; padding:20px; width:92%; max-width:450px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box;}
 .closeBtn { float:right; background:#444; color:white; border:none; border-radius:50%; width:35px; height:35px; cursor:pointer;}
 .history-item { background:rgba(255,255,255,0.05); padding:12px; margin:8px 0; border-radius:12px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid #f39c12;}
 input[type="text"], input[type="date"], select { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.12); color:white; border:none; padding:15px; border-radius:10px; margin-bottom:10px; font-family:inherit; font-size:16px; outline:none;}
-input:focus { background:rgba(255,255,255,0.2);}
 </style>
 </head>
 <body>
@@ -44,32 +42,28 @@ input:focus { background:rgba(255,255,255,0.2);}
 <div class="content active" id="tabForm">
   <div class="glass">
     <input type="file" id="photo" accept="image/*">
-    <input type="text" id="marque" placeholder="Marque (ex: Audi)" autocomplete="off">
-    <input type="text" id="modele" placeholder="Modèle (ex: A3)" autocomplete="off">
-    <input type="text" id="plaque" placeholder="Plaque d'immatriculation" autocomplete="off">
-    
+    <input type="text" id="marque" placeholder="Marque" autocomplete="off">
+    <input type="text" id="modele" placeholder="Modèle" autocomplete="off">
+    <input type="text" id="plaque" placeholder="Plaque" autocomplete="off">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
         <p style="margin:0; font-size:14px;">🛠 Travaux effectués :</p>
         <button onclick="toggleEditTasks()" id="editTaskToggle" style="background:none; border:none; color:#3498db; font-size:12px; cursor:pointer; padding:5px;">⚙️ Modifier liste</button>
     </div>
-    
     <div class="tacheContainer" id="tachesContainer"></div>
-    <input type="text" id="tachesAutres" placeholder="Autres travaux (séparés par virgules)" autocomplete="off">
-    
+    <input type="text" id="tachesAutres" placeholder="Autres travaux (virgules)..." autocomplete="off">
     <button class="addBtn" id="mainAddBtn" onclick="addCar()">Enregistrer le véhicule</button>
   </div>
 
   <div style="margin-top:20px;">
-    <input type="text" id="searchBar" placeholder="🔎 Rechercher plaque ou marque..." oninput="displayCars()">
+    <input type="text" id="searchBar" placeholder="🔎 Rechercher..." oninput="displayCars()">
     <select id="filterMarque" onchange="displayCars()"><option value="">Toutes les marques</option></select>
   </div>
-
   <div id="cars"></div>
-  <button class="deleteBtn" style="margin:50px 0; width:100%; background:#333; opacity:0.4;" onclick="clearDatabase()">Réinitialiser tout le garage</button>
+  <button class="deleteBtn" style="margin:50px 0; width:100%; background:#333; opacity:0.4;" onclick="clearDatabase()">Réinitialiser tout</button>
 </div>
 
 <div class="content" id="tabStats">
-  <div id="noDataMsg" style="text-align:center; padding:50px; color:#888;">Aucun véhicule enregistré.</div>
+  <div id="noDataMsg" style="text-align:center; padding:50px; color:#888;">Aucun véhicule.</div>
   <div id="chartsWrapper" style="display:none;">
     <canvas id="chartMarques"></canvas>
     <canvas id="chartTaches"></canvas>
@@ -86,22 +80,22 @@ input:focus { background:rgba(255,255,255,0.2);}
     <input type="text" id="editMarque">
     <input type="text" id="editModele">
     <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
-        <h4>📜 Historique des travaux</h4>
+        <h4>📜 Historique</h4>
         <div id="historyContainer"></div>
         <div class="glass" style="margin-top:10px; background:rgba(52, 152, 219, 0.15);">
             <input type="date" id="newDate">
             <input type="text" id="newTaches" placeholder="Nouvelle intervention...">
-            <button class="addBtn" style="background:#3498db;" onclick="addIntervention()">Ajouter à l'historique</button>
+            <button class="addBtn" style="background:#3498db;" onclick="addIntervention()">Ajouter</button>
         </div>
     </div>
-    <button class="addBtn" style="margin-top:20px;" onclick="saveCar()">✅ Enregistrer les modifications</button>
+    <button class="addBtn" style="margin-top:20px;" onclick="saveCar()">✅ Enregistrer</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let cars = JSON.parse(localStorage.getItem("cars")) || [];
-let tachesPredefinies = JSON.parse(localStorage.getItem("learnedTasks")) || ["Vidange", "Plaquettes", "Pneus", "Distribution", "Freinage"];
+let tachesPredefinies = JSON.parse(localStorage.getItem("learnedTasks")) || ["Vidange", "Plaquettes", "Pneus", "Distribution"];
 let isEditTaskMode = false;
 let myCharts = {};
 
@@ -146,65 +140,73 @@ function learnTasks(str) {
     }
 }
 
-function addCar() {
+// COMPRESSION D'IMAGE
+async function compressImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX = 800;
+                let w = img.width, h = img.height;
+                if (w > MAX) { h *= MAX / w; w = MAX; }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', 0.7));
+            };
+        };
+    });
+}
+
+async function addCar() {
     const btn = document.getElementById('mainAddBtn');
     const marque = document.getElementById("marque").value.trim();
     const modele = document.getElementById("modele").value.trim();
-    const plaque = document.getElementById("plaque").value.trim();
-    
-    if (!marque || !modele) return alert("Veuillez saisir au moins la marque et le modèle.");
+    if (!marque || !modele) return alert("Marque et Modèle requis !");
 
     btn.disabled = true;
-    btn.innerText = "Chargement...";
+    btn.innerText = "Enregistrement...";
 
-    const file = document.getElementById("photo").files[0];
-    const runSave = (photoData = "") => {
-        const checkedBtns = Array.from(document.querySelectorAll(".tacheBtn.checked"));
-        const selectedTaches = checkedBtns.map(b => b.innerText.replace("✕","").trim());
+    try {
+        let photoData = "";
+        const file = document.getElementById("photo").files[0];
+        if(file) photoData = await compressImage(file);
+
+        const checked = Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b => b.innerText.replace("✕","").trim());
         const extra = document.getElementById("tachesAutres").value;
-        
         learnTasks(extra);
-        const allTaches = [...selectedTaches, ...extra.split(",").map(t=>t.trim()).filter(t=>t)].join(", ");
+        const all = [...checked, ...extra.split(",").map(t=>t.trim()).filter(t=>t)].join(", ");
         
-        const carObj = {
-            photo: photoData, 
-            marque, 
-            modele, 
-            plaque: plaque.toUpperCase(),
-            taches: allTaches, 
-            date: Date.now(),
-            interventions: [{ date: Date.now(), taches: allTaches || "Entrée au garage" }]
-        };
+        cars.push({
+            photo: photoData, marque, modele, 
+            plaque: document.getElementById("plaque").value.toUpperCase(),
+            taches: all, date: Date.now(),
+            interventions: [{ date: Date.now(), taches: all || "Entrée" }]
+        });
         
-        cars.push(carObj);
         localStorage.setItem("cars", JSON.stringify(cars));
         
-        // --- NETTOYAGE FORCE ---
+        // RESET TOTAL
         document.getElementById("photo").value = "";
         document.getElementById("marque").value = "";
         document.getElementById("modele").value = "";
         document.getElementById("plaque").value = "";
         document.getElementById("tachesAutres").value = "";
-        checkedBtns.forEach(b => b.classList.remove("checked"));
-        
-        // Fermer le clavier sur mobile
+        document.querySelectorAll(".tacheBtn.checked").forEach(b => b.classList.remove("checked"));
         document.activeElement.blur();
         
-        setTimeout(() => {
-            displayCars();
-            updateCharts();
-            btn.disabled = false;
-            btn.innerText = "Enregistrer le véhicule";
-            alert("Véhicule ajouté avec succès !");
-        }, 300);
-    };
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => runSave(e.target.result);
-        reader.readAsDataURL(file);
-    } else {
-        runSave();
+        displayCars();
+        updateCharts();
+        alert("Véhicule ajouté !");
+    } catch(e) {
+        alert("Erreur. Essayez sans photo ou une photo plus petite.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Enregistrer le véhicule";
     }
 }
 
@@ -212,49 +214,36 @@ function displayCars() {
     const con = document.getElementById("cars");
     const f = document.getElementById("filterMarque").value.toLowerCase();
     const s = document.getElementById("searchBar").value.toLowerCase();
-    
     con.innerHTML = "";
     
-    // On travaille sur une copie triée
-    const sortedCars = [...cars].sort((a,b) => b.date - a.date);
-    
-    sortedCars.forEach((car) => {
-        const originalIndex = cars.indexOf(car);
+    [...cars].sort((a,b) => b.date - a.date).forEach((car) => {
+        const idx = cars.indexOf(car);
         if (f && car.marque.toLowerCase() !== f) return;
         if (s && !(car.marque + " " + car.plaque).toLowerCase().includes(s)) return;
         
-        const div = document.createElement("div"); 
-        div.className = "car glass";
+        const div = document.createElement("div"); div.className = "car glass";
         div.innerHTML = `
             ${car.photo ? `<img src="${car.photo}">` : ``}
             <h3>${car.marque} ${car.modele}</h3>
-            <p>🆔 Plaque : <b style="color:#27ae60">${car.plaque || '-'}</b></p>
-            <button class="editBtn" onclick="openModal(${originalIndex})">✏️ Gérer les réparations</button>
-            <button class="deleteBtn" onclick="deleteCar(${originalIndex})">🗑️ Supprimer la fiche</button>
+            <p>🆔 <b style="color:#27ae60">${car.plaque || '-'}</b></p>
+            <button class="editBtn" onclick="openModal(${idx})">✏️ Réparations</button>
+            <button class="deleteBtn" onclick="deleteCar(${idx})">🗑️ Supprimer</button>
         `;
         con.appendChild(div);
     });
     updateFilter();
 }
 
-function deleteCar(index) {
-    if(confirm("Supprimer définitivement ce véhicule ?")) {
-        cars.splice(index, 1);
-        localStorage.setItem("cars", JSON.stringify(cars));
-        displayCars();
-        updateCharts();
-    }
-}
+function deleteCar(i) { if(confirm("Supprimer ?")) { cars.splice(i, 1); localStorage.setItem("cars", JSON.stringify(cars)); displayCars(); updateCharts(); } }
 
 function updateFilter() {
     const sel = document.getElementById("filterMarque");
     const val = sel.value;
     const marques = [...new Set(cars.map(c => c.marque))];
-    sel.innerHTML = '<option value="">Toutes les marques</option>' + marques.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.innerHTML = '<option value="">Filtrer par marque</option>' + marques.map(m => `<option value="${m}">${m}</option>`).join('');
     sel.value = val;
 }
 
-// --- MODALE ---
 function openModal(i) {
     const c = cars[i];
     document.getElementById('editIndex').value = i;
@@ -273,7 +262,7 @@ function refreshHistory(c) {
     document.getElementById('historyContainer').innerHTML = hist.map((int, idx) => `
         <div class="history-item">
             <div>📅 <b>${new Date(int.date).toLocaleDateString()}</b><br><small>${int.taches}</small></div>
-            <button onclick="delHist(${idx})" style="border:none; background:none; font-size:18px;">🗑️</button>
+            <button onclick="delHist(${idx})" style="border:none; background:none;">🗑️</button>
         </div>
     `).join('');
 }
@@ -289,10 +278,7 @@ function addIntervention() {
     const t = document.getElementById('newTaches').value.trim();
     if(!t) return;
     learnTasks(t);
-    cars[i].interventions.push({ 
-        date: new Date(document.getElementById('newDate').value).getTime(), 
-        taches: t 
-    });
+    cars[i].interventions.push({ date: new Date(document.getElementById('newDate').value).getTime(), taches: t });
     cars[i].interventions.sort((a,b) => b.date - a.date);
     refreshHistory(cars[i]);
     document.getElementById('newTaches').value = "";
@@ -313,7 +299,6 @@ function updateCharts() {
     const msg = document.getElementById("noDataMsg");
     if (cars.length === 0) { wrap.style.display = "none"; msg.style.display = "block"; return; }
     wrap.style.display = "block"; msg.style.display = "none";
-    
     const s = { m: {}, t: {}, mo: Array(12).fill(0), j: Array(31).fill(0) };
     cars.forEach(c => {
         s.m[c.marque] = (s.m[c.marque] || 0) + 1;
@@ -322,21 +307,17 @@ function updateCharts() {
             const d = new Date(inter.date); s.mo[d.getMonth()]++; s.j[d.getDate()-1]++;
         });
     });
-
     const cfg = (id, type, label, labels, data, color) => {
         if (myCharts[id]) myCharts[id].destroy();
-        const ctx = document.getElementById(id);
-        if(!ctx) return;
-        myCharts[id] = new Chart(ctx, {
+        myCharts[id] = new Chart(document.getElementById(id), {
             type, data: { labels, datasets: [{ label, data, backgroundColor: color, borderColor: color, tension: 0.3 }] },
             options: { scales: type !== 'pie' ? { y: { beginAtZero: true, ticks: { color: 'white', stepSize: 1 } }, x: { ticks: { color: 'white' } } } : {} }
         });
     };
-
     cfg('chartMarques', 'bar', 'Véhicules', Object.keys(s.m), Object.values(s.m), '#27ae60');
-    cfg('chartTaches', 'pie', 'Réparations', Object.keys(s.t), Object.values(s.t), Object.keys(s.t).map((_,i)=>`hsla(${i*50},70%,50%,0.8)`));
-    cfg('chartMois', 'line', 'Activité Mensuelle', ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"], s.mo, '#3498db');
-    cfg('chartJours', 'line', 'Activité Quotidienne', Array.from({length:31},(_,i)=>i+1), s.j, '#e67e22');
+    cfg('chartTaches', 'pie', 'Travaux', Object.keys(s.t), Object.values(s.t), Object.keys(s.t).map((_,i)=>`hsla(${i*50},70%,50%,0.8)`));
+    cfg('chartMois', 'line', 'Mois', ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"], s.mo, '#3498db');
+    cfg('chartJours', 'line', 'Jours', Array.from({length:31},(_,i)=>i+1), s.j, '#e67e22');
 }
 
 function switchTab(i) {
@@ -345,9 +326,8 @@ function switchTab(i) {
     if (i === 1) setTimeout(updateCharts, 100);
 }
 
-function clearDatabase() { if(confirm("Supprimer TOUT le garage ?")) { cars = []; localStorage.clear(); location.reload(); } }
+function clearDatabase() { if(confirm("Vraiment TOUT supprimer ?")) { cars = []; localStorage.clear(); location.reload(); } }
 
-// Démarrage
 renderTaches();
 displayCars();
 </script>
