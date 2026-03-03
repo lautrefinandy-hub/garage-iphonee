@@ -44,11 +44,42 @@ button{
   margin:10px 0;
 }
 
-.stats{
+/* SLIDE MENU */
+#taskMenu{
+  position:fixed;
+  bottom:-100%;
+  left:0;
+  width:100%;
   background:#1e293b;
-  padding:15px;
-  border-radius:15px;
-  margin:15px 0;
+  padding:20px;
+  border-radius:20px 20px 0 0;
+  transition:0.3s;
+  max-height:70%;
+  overflow-y:auto;
+}
+
+#taskMenu.active{
+  bottom:0;
+}
+
+.overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.5);
+  display:none;
+}
+
+.overlay.active{display:block;}
+
+.tab{
+  display:none;
+}
+
+.tab.active{
+  display:block;
 }
 </style>
 </head>
@@ -57,13 +88,14 @@ button{
 
 <h1>🚗 Garage Andy</h1>
 
+<div id="mainTab" class="tab active">
+
 <input type="text" id="marque" placeholder="Marque">
 <input type="text" id="modele" placeholder="Modèle">
 <input type="text" id="plaque" placeholder="Plaque">
-<input type="text" id="tache" placeholder="Tâche effectuée">
 
-<button class="addBtn" onclick="addCar()">Ajouter</button>
-<button class="statBtn" onclick="toggleStats()">📊 Statistiques</button>
+<button class="addBtn" onclick="openTaskMenu()">Choisir tâches</button>
+<button class="statBtn" onclick="showStats()">📊 Statistiques</button>
 
 <hr>
 
@@ -73,48 +105,106 @@ button{
 </select>
 
 <div id="cars"></div>
-<div id="stats" style="display:none;"></div>
+
+</div>
+
+<div id="statsTab" class="tab">
+  <button onclick="showMain()">⬅ Retour</button>
+  <div id="stats"></div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeTaskMenu()"></div>
+
+<div id="taskMenu">
+  <h3>Tâches</h3>
+
+  <div id="taskList"></div>
+
+  <input type="text" id="customTask" placeholder="Autre tâche">
+  <button onclick="addSelectedTasks()" class="addBtn">Valider</button>
+</div>
 
 <script>
 
 let cars = JSON.parse(localStorage.getItem("garageCars")) || [];
 
+const predefinedTasks = [
+  "Vidange",
+  "Freins",
+  "Distribution",
+  "Embrayage",
+  "Pneus",
+  "Révision",
+  "Diagnostic",
+  "Batterie"
+];
+
 function save(){
   localStorage.setItem("garageCars", JSON.stringify(cars));
 }
 
-function addCar(){
+/* ---------- SLIDE MENU ---------- */
+
+function openTaskMenu(){
+  const list=document.getElementById("taskList");
+  list.innerHTML="";
+  predefinedTasks.forEach((t,i)=>{
+    list.innerHTML+=`
+      <label>
+        <input type="checkbox" value="${t}"> ${t}
+      </label><br>
+    `;
+  });
+  document.getElementById("taskMenu").classList.add("active");
+  document.getElementById("overlay").classList.add("active");
+}
+
+function closeTaskMenu(){
+  document.getElementById("taskMenu").classList.remove("active");
+  document.getElementById("overlay").classList.remove("active");
+}
+
+function addSelectedTasks(){
 
   const marque=document.getElementById("marque").value.trim();
   const modele=document.getElementById("modele").value.trim();
   const plaque=document.getElementById("plaque").value.trim().toUpperCase();
-  const tache=document.getElementById("tache").value.trim();
 
-  if(!marque || !plaque || !tache){
+  if(!marque || !plaque){
     alert("Champs manquants");
     return;
   }
 
-  let existing = cars.find(c => c.plaque === plaque);
+  let tasks=[];
+  document.querySelectorAll("#taskList input:checked").forEach(cb=>{
+    tasks.push(cb.value);
+  });
+
+  const custom=document.getElementById("customTask").value.trim();
+  if(custom) tasks.push(custom);
+
+  if(tasks.length===0){
+    alert("Aucune tâche sélectionnée");
+    return;
+  }
+
+  let existing=cars.find(c=>c.plaque===plaque);
 
   if(existing){
-    existing.historique.push({
-      tache:tache,
-      date:Date.now()
+    tasks.forEach(t=>{
+      existing.historique.push({tache:t,date:Date.now()});
     });
   } else {
     cars.push({
       marque,
       modele,
       plaque,
-      historique:[{
-        tache:tache,
-        date:Date.now()
-      }]
+      historique:tasks.map(t=>({tache:t,date:Date.now()}))
     });
   }
 
   save();
+  closeTaskMenu();
   clearInputs();
   displayCars();
 }
@@ -123,8 +213,10 @@ function clearInputs(){
   document.getElementById("marque").value="";
   document.getElementById("modele").value="";
   document.getElementById("plaque").value="";
-  document.getElementById("tache").value="";
+  document.getElementById("customTask").value="";
 }
+
+/* ---------- DISPLAY ---------- */
 
 function displayCars(){
 
@@ -135,12 +227,6 @@ function displayCars(){
   const filter=document.getElementById("filterMarque").value.toLowerCase();
 
   let marquesSet=new Set();
-
-  cars.sort((a,b)=>{
-    const lastA=a.historique[a.historique.length-1].date;
-    const lastB=b.historique[b.historique.length-1].date;
-    return lastB-lastA;
-  });
 
   cars.forEach((car,index)=>{
 
@@ -160,7 +246,7 @@ function displayCars(){
       <h3>${car.marque} ${car.modele||""}</h3>
       <p>🆔 ${car.plaque}</p>
       ${histHTML}
-      <button class="editBtn" onclick="addTask(${index})">✏️ Ajouter tâche</button>
+      <button class="editBtn" onclick="addExtraTask(${index})">✏️ Ajouter tâche</button>
       <button class="deleteBtn" onclick="deleteCar(${index})">Supprimer</button>
     `;
 
@@ -168,7 +254,6 @@ function displayCars(){
   });
 
   updateFilter(marquesSet);
-  updateStats();
 }
 
 function updateFilter(set){
@@ -181,24 +266,45 @@ function updateFilter(set){
   select.value=current;
 }
 
-function addTask(index){
-  const t=prompt("Nouvelle tâche :");
-  if(t){
-    cars[index].historique.push({
-      tache:t,
-      date:Date.now()
+function addExtraTask(index){
+  openTaskMenu();
+  document.querySelector(".addBtn").onclick=function(){
+    let tasks=[];
+    document.querySelectorAll("#taskList input:checked").forEach(cb=>{
+      tasks.push(cb.value);
     });
+    const custom=document.getElementById("customTask").value.trim();
+    if(custom) tasks.push(custom);
+
+    tasks.forEach(t=>{
+      cars[index].historique.push({tache:t,date:Date.now()});
+    });
+
+    save();
+    closeTaskMenu();
+    displayCars();
+  };
+}
+
+function deleteCar(index){
+  if(confirm("Supprimer ?")){
+    cars.splice(index,1);
     save();
     displayCars();
   }
 }
 
-function deleteCar(index){
-  if(confirm("Supprimer cette voiture ?")){
-    cars.splice(index,1);
-    save();
-    displayCars();
-  }
+/* ---------- STATS TAB ---------- */
+
+function showStats(){
+  document.getElementById("mainTab").classList.remove("active");
+  document.getElementById("statsTab").classList.add("active");
+  updateStats();
+}
+
+function showMain(){
+  document.getElementById("statsTab").classList.remove("active");
+  document.getElementById("mainTab").classList.add("active");
 }
 
 function updateStats(){
@@ -219,31 +325,18 @@ function updateStats(){
     });
   });
 
-  let html="<div class='stats'><h3>📊 Statistiques</h3>";
+  let html="<h3>📊 Statistiques</h3>";
 
   html+="<h4>Par jour</h4>";
-  for(let j in parJour){
-    html+=`<p>${j} : ${parJour[j]}</p>`;
-  }
+  for(let j in parJour) html+=`<p>${j} : ${parJour[j]}</p>`;
 
   html+="<h4>Par mois</h4>";
-  for(let m in parMois){
-    html+=`<p>${m} : ${parMois[m]}</p>`;
-  }
+  for(let m in parMois) html+=`<p>${m} : ${parMois[m]}</p>`;
 
-  html+="<h4>Par type de réparation</h4>";
-  for(let t in parType){
-    html+=`<p>${t} : ${parType[t]}</p>`;
-  }
-
-  html+="</div>";
+  html+="<h4>Par type</h4>";
+  for(let t in parType) html+=`<p>${t} : ${parType[t]}</p>`;
 
   document.getElementById("stats").innerHTML=html;
-}
-
-function toggleStats(){
-  const s=document.getElementById("stats");
-  s.style.display=s.style.display==="none"?"block":"none";
 }
 
 document.getElementById("search").addEventListener("input",displayCars);
