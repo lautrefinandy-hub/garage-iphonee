@@ -6,19 +6,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial; margin:0; padding:10px; background:#1c1c1c; color:white;}
-h2,h3{text-align:center;}
+h2,h3{text-align:center;margin:5px;}
 .tabs{display:flex;margin-bottom:10px;}
 .tabBtn{flex:1;padding:12px;background:rgba(255,255,255,0.1);border:none;color:white;font-weight:bold;cursor:pointer;}
 .tabBtn.active{background:rgba(255,255,255,0.25);}
 .content{display:none;}
 .content.active{display:block;}
 .glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:10px;border-radius:12px;margin:10px 0;}
-.tacheBtn{display:block;margin:5px 0;padding:10px;border-radius:10px;background:rgba(255,255,255,0.1);color:white;cursor:pointer;text-align:left;}
+.tacheContainer{display:flex;overflow-x:auto;margin:5px 0;padding:5px;}
+.tacheBtn{flex:0 0 auto;margin:4px 5px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.1);color:white;cursor:pointer;white-space:nowrap;}
 .tacheBtn.checked{background:#27ae60;color:black;}
 button.addBtn{background:#27ae60;color:white;padding:10px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
 button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
 .car{background:rgba(255,255,255,0.05);padding:10px;border-radius:12px;margin:10px 0;}
 .car img{width:100%;border-radius:10px;}
+canvas{margin:15px 0;border-radius:12px;background:rgba(255,255,255,0.05);padding:5px;}
 </style>
 </head>
 <body>
@@ -37,7 +39,7 @@ button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-r
     <input type="text" id="modele" placeholder="Modèle">
     <input type="text" id="plaque" placeholder="Plaque">
     <p>✅ Tâches :</p>
-    <div id="tachesContainer"></div>
+    <div class="tacheContainer" id="tachesContainer"></div>
     <input type="text" id="tachesAutres" placeholder="Autres tâches séparées par des virgules">
     <button class="addBtn" onclick="addCar()">Ajouter</button>
   </div>
@@ -55,10 +57,12 @@ button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-r
   <canvas id="chartMarques"></canvas>
   <canvas id="chartTaches"></canvas>
   <canvas id="chartMois"></canvas>
+  <canvas id="chartJours"></canvas>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Données
 let cars = JSON.parse(localStorage.getItem("cars"))||[];
 let tachesPredefinies=["Vidange et Filtre à Huile","Filtre à air","Filtre à gasoil","Plaquette de frein","Disque de frein","Filtre habitacle","Pneus Avant","Pneus Arrière"];
 
@@ -128,18 +132,23 @@ function updateFilterOptions(){
 }
 
 // Charts
-let chartMarques, chartTaches, chartMois;
+let chartMarques, chartTaches, chartMois, chartJours;
 function updateCharts(){
-  const marquesData={}, tachesData={}, moisData={};
+  const marquesData={}, tachesData={}, moisData={}, joursData={};
   cars.forEach(c=>{
     marquesData[c.marque]=(marquesData[c.marque]||0)+1;
     c.taches.split(",").forEach(t=>{const tt=t.trim(); if(tt) tachesData[tt]=(tachesData[tt]||0)+1;});
-    const m=new Date(c.date).getMonth(); moisData[m]=(moisData[m]||0)+1;
+    const d=new Date(c.date);
+    const mois=d.getMonth(); const jour=d.getDate();
+    moisData[mois]=(moisData[mois]||0)+1;
+    joursData[jour]=(joursData[jour]||0)+1;
   });
   const mLabels=Object.keys(marquesData), mCounts=Object.values(marquesData);
   const tLabels=Object.keys(tachesData), tCounts=Object.values(tachesData);
   const moisLabels=["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
   const moisCounts=Array.from({length:12},(_,i)=>moisData[i]||0);
+  const joursLabels=Array.from({length:31},(_,i)=>i+1);
+  const joursCounts=joursLabels.map(d=>joursData[d]||0);
 
   if(chartMarques) chartMarques.destroy();
   chartMarques=new Chart(document.getElementById("chartMarques"),{type:'bar',data:{labels:mLabels,datasets:[{label:'Voitures',data:mCounts,backgroundColor:'#27ae60'}]},options:{responsive:true,plugins:{legend:{display:false}}}});
@@ -147,6 +156,8 @@ function updateCharts(){
   chartTaches=new Chart(document.getElementById("chartTaches"),{type:'pie',data:{labels:tLabels,datasets:[{label:'Tâches',data:tCounts,backgroundColor:tLabels.map(()=>`#${Math.floor(Math.random()*16777215).toString(16)}`)}]},options:{responsive:true}});
   if(chartMois) chartMois.destroy();
   chartMois=new Chart(document.getElementById("chartMois"),{type:'line',data:{labels:moisLabels,datasets:[{label:'Voitures/mois',data:moisCounts,borderColor:'#3498db',backgroundColor:'#3498db22'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+  if(chartJours) chartJours.destroy();
+  chartJours=new Chart(document.getElementById("chartJours"),{type:'line',data:{labels:joursLabels,datasets:[{label:'Voitures/jour',data:joursCounts,borderColor:'#e67e22',backgroundColor:'#e67e2222'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
 }
 
 renderTaches(); displayCars();
