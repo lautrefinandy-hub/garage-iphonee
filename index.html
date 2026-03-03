@@ -2,70 +2,74 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Garage iPhone Pro v4</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Garage iPhone Pro v5</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
-body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial; margin:0; padding:10px; background:#1c1c1c; color:white;}
+body { font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial; margin:0; padding:10px; background:#1c1c1c; color:white; -webkit-tap-highlight-color: transparent;}
 h2,h3{text-align:center;margin:5px;}
-.tabs{display:flex;margin-bottom:15px;}
-.tabBtn{flex:1;padding:12px;background:rgba(255,255,255,0.1);border:none;color:white;font-weight:bold;cursor:pointer;transition: 0.3s;}
-.tabBtn.active{background:rgba(255,255,255,0.25); border-bottom: 2px solid #27ae60;}
+.tabs{display:flex;margin-bottom:15px;position:sticky;top:0;z-index:10;background:#1c1c1c;padding-top:5px;}
+.tabBtn{flex:1;padding:12px;background:rgba(255,255,255,0.1);border:none;color:white;font-weight:bold;cursor:pointer;}
+.tabBtn.active{background:rgba(255,255,255,0.25); border-bottom: 3px solid #27ae60;}
 .content{display:none;}
 .content.active{display:block;}
-.glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:10px;border-radius:12px;margin:10px 0; border: 1px solid rgba(255,255,255,0.1);}
-.tacheContainer{max-height:220px;overflow-y:auto;margin:5px 0;padding:5px;border-radius:12px;background:rgba(0,0,0,0.2);display: flex;flex-wrap: wrap;gap: 5px;}
-.tacheBtn{padding:10px;border-radius:10px;background:rgba(255,255,255,0.1);color:white;cursor:pointer;border:none;font-size:13px;display:flex;align-items:center;gap:8px;}
+.glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding:12px;border-radius:12px;margin:10px 0; border: 1px solid rgba(255,255,255,0.1);}
+.tacheContainer{max-height:220px;overflow-y:auto;margin:5px 0;padding:5px;border-radius:12px;background:rgba(0,0,0,0.2);display: flex;flex-wrap: wrap;gap: 6px;}
+.tacheBtn{padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.1);color:white;cursor:pointer;border:none;font-size:13px;display:flex;align-items:center;gap:8px;}
 .tacheBtn.checked{background:#27ae60;color:white;font-weight:bold;}
-.delTaskBtn {color:#e74c3c; font-weight:bold; padding:2px 5px; background:rgba(255,255,255,0.1); border-radius:4px; display:none;}
-button.addBtn{background:#27ae60;color:white;padding:12px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;font-weight:bold;font-size:16px;}
-button.editBtn{background:#f39c12;color:white;padding:10px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
-button.deleteBtn{background:#e74c3c;color:white;padding:10px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
+.delTaskBtn {color:#ff4d4d; font-weight:bold; padding:2px 5px; background:rgba(0,0,0,0.3); border-radius:4px; display:none;}
+button.addBtn{background:#27ae60;color:white;padding:15px;border:none;border-radius:10px;margin-top:10px;cursor:pointer;width:100%;font-weight:bold;font-size:16px;}
+button.editBtn{background:#f39c12;color:white;padding:12px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
+button.deleteBtn{background:#e74c3c;color:white;padding:10px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;font-size:12px;}
 .car{background:rgba(255,255,255,0.05);padding:15px;border-radius:15px;margin:15px 0; border: 1px solid rgba(255,255,255,0.1);}
 .car img{width:100%;border-radius:10px;margin-bottom:10px; object-fit: cover; max-height: 200px;}
 canvas{margin:15px 0;border-radius:12px;background:rgba(255,255,255,0.05);padding:10px; width:100% !important; height:auto !important;}
 
-.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:1000; overflow-y:auto; backdrop-filter:blur(10px); }
-.modal-content { background:#2c2c2c; margin:10px auto; padding:20px; width:90%; max-width:450px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box;}
-.closeBtn { float:right; background:#444; color:white; border:none; border-radius:50%; width:30px; height:30px; cursor:pointer;}
+.modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:1000; overflow-y:auto;}
+.modal-content { background:#2c2c2c; margin:10px auto; padding:20px; width:92%; max-width:450px; border-radius:20px; border:1px solid rgba(255,255,255,0.1); box-sizing: border-box;}
+.closeBtn { float:right; background:#444; color:white; border:none; border-radius:50%; width:35px; height:35px; cursor:pointer;}
 .history-item { background:rgba(255,255,255,0.05); padding:12px; margin:8px 0; border-radius:12px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid #f39c12;}
-input[type="text"], input[type="date"], select { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.1); color:white; border:none; padding:14px; border-radius:10px; margin-bottom:10px; font-family:inherit; font-size:16px;}
+input[type="text"], input[type="date"], select { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.12); color:white; border:none; padding:15px; border-radius:10px; margin-bottom:10px; font-family:inherit; font-size:16px; outline:none;}
+input:focus { background:rgba(255,255,255,0.2);}
 </style>
 </head>
 <body>
 
-<h2>🚗 Garage iPhone</h2>
+<h2>🚗 Mon Garage Pro</h2>
 
 <div class="tabs">
   <button class="tabBtn active" onclick="switchTab(0)">Voitures</button>
-  <button class="tabBtn" onclick="switchTab(1)">Statistiques</button>
+  <button class="tabBtn" onclick="switchTab(1)">Stats</button>
 </div>
 
 <div class="content active" id="tabForm">
   <div class="glass">
     <input type="file" id="photo" accept="image/*">
-    <input type="text" id="marque" placeholder="Marque">
-    <input type="text" id="modele" placeholder="Modèle">
-    <input type="text" id="plaque" placeholder="Plaque">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <p style="margin:5px 0;">🛠 Travaux effectués :</p>
-        <button onclick="toggleEditTasks()" id="editTaskToggle" style="background:none; border:none; color:#3498db; font-size:12px; cursor:pointer;">⚙️ Modifier la liste</button>
+    <input type="text" id="marque" placeholder="Marque (ex: Audi)" autocomplete="off">
+    <input type="text" id="modele" placeholder="Modèle (ex: A3)" autocomplete="off">
+    <input type="text" id="plaque" placeholder="Plaque d'immatriculation" autocomplete="off">
+    
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+        <p style="margin:0; font-size:14px;">🛠 Travaux effectués :</p>
+        <button onclick="toggleEditTasks()" id="editTaskToggle" style="background:none; border:none; color:#3498db; font-size:12px; cursor:pointer; padding:5px;">⚙️ Modifier liste</button>
     </div>
+    
     <div class="tacheContainer" id="tachesContainer"></div>
-    <input type="text" id="tachesAutres" placeholder="Nouveaux travaux (séparés par virgules)">
-    <button class="addBtn" onclick="addCar()">Enregistrer le véhicule</button>
+    <input type="text" id="tachesAutres" placeholder="Autres travaux (séparés par virgules)" autocomplete="off">
+    
+    <button class="addBtn" id="mainAddBtn" onclick="addCar()">Enregistrer le véhicule</button>
   </div>
 
   <div style="margin-top:20px;">
-    <input type="text" id="searchBar" placeholder="🔎 Rechercher..." oninput="displayCars()">
+    <input type="text" id="searchBar" placeholder="🔎 Rechercher plaque ou marque..." oninput="displayCars()">
     <select id="filterMarque" onchange="displayCars()"><option value="">Toutes les marques</option></select>
   </div>
 
   <div id="cars"></div>
-  <button class="deleteBtn" style="margin-top:40px; background:#444; font-size:10px; opacity:0.5;" onclick="clearDatabase()">⚠️ Effacer toute la base</button>
+  <button class="deleteBtn" style="margin:50px 0; width:100%; background:#333; opacity:0.4;" onclick="clearDatabase()">Réinitialiser tout le garage</button>
 </div>
 
 <div class="content" id="tabStats">
-  <div id="noDataMsg" style="text-align:center; padding:50px; color:#888;">Aucune donnée.</div>
+  <div id="noDataMsg" style="text-align:center; padding:50px; color:#888;">Aucun véhicule enregistré.</div>
   <div id="chartsWrapper" style="display:none;">
     <canvas id="chartMarques"></canvas>
     <canvas id="chartTaches"></canvas>
@@ -77,31 +81,30 @@ input[type="text"], input[type="date"], select { width:100%; box-sizing:border-b
 <div id="editModal" class="modal">
   <div class="modal-content">
     <button class="closeBtn" onclick="closeModal()">✕</button>
-    <h3 id="modalTitle">Modifier</h3>
+    <h3 id="modalTitle">Édition véhicule</h3>
     <input type="hidden" id="editIndex">
-    <input type="text" id="editMarque" placeholder="Marque">
-    <input type="text" id="editModele" placeholder="Modèle">
+    <input type="text" id="editMarque">
+    <input type="text" id="editModele">
     <div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:10px;">
-        <h4>⚙️ Historique</h4>
+        <h4>📜 Historique des travaux</h4>
         <div id="historyContainer"></div>
-        <div class="glass" style="margin-top:10px; background:rgba(52, 152, 219, 0.1);">
+        <div class="glass" style="margin-top:10px; background:rgba(52, 152, 219, 0.15);">
             <input type="date" id="newDate">
-            <input type="text" id="newTaches" placeholder="Description travaux">
-            <button class="addBtn" style="background:#3498db;" onclick="addIntervention()">Ajouter</button>
+            <input type="text" id="newTaches" placeholder="Nouvelle intervention...">
+            <button class="addBtn" style="background:#3498db;" onclick="addIntervention()">Ajouter à l'historique</button>
         </div>
     </div>
-    <button class="addBtn" style="margin-top:15px;" onclick="saveCar()">✅ Enregistrer</button>
+    <button class="addBtn" style="margin-top:20px;" onclick="saveCar()">✅ Enregistrer les modifications</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 let cars = JSON.parse(localStorage.getItem("cars")) || [];
-let tachesPredefinies = JSON.parse(localStorage.getItem("learnedTasks")) || ["Vidange", "Plaquettes", "Pneus", "Batterie"];
+let tachesPredefinies = JSON.parse(localStorage.getItem("learnedTasks")) || ["Vidange", "Plaquettes", "Pneus", "Distribution", "Freinage"];
 let isEditTaskMode = false;
 let myCharts = {};
 
-// --- GESTION TÂCHES ---
 function renderTaches() {
     const container = document.getElementById("tachesContainer");
     container.innerHTML = "";
@@ -117,16 +120,14 @@ function renderTaches() {
 
 function toggleEditTasks() {
     isEditTaskMode = !isEditTaskMode;
-    document.getElementById("editTaskToggle").innerText = isEditTaskMode ? "✅ Terminer" : "⚙️ Modifier la liste";
+    document.getElementById("editTaskToggle").innerText = isEditTaskMode ? "✅ Terminer" : "⚙️ Modifier liste";
     renderTaches();
 }
 
 function deleteTask(idx) {
-    if(confirm("Supprimer cette tâche de la liste ?")) {
-        tachesPredefinies.splice(idx, 1);
-        localStorage.setItem("learnedTasks", JSON.stringify(tachesPredefinies));
-        renderTaches();
-    }
+    tachesPredefinies.splice(idx, 1);
+    localStorage.setItem("learnedTasks", JSON.stringify(tachesPredefinies));
+    renderTaches();
 }
 
 function learnTasks(str) {
@@ -145,31 +146,57 @@ function learnTasks(str) {
     }
 }
 
-// --- CORE LOGIC ---
 function addCar() {
+    const btn = document.getElementById('mainAddBtn');
     const marque = document.getElementById("marque").value.trim();
     const modele = document.getElementById("modele").value.trim();
-    if (!marque || !modele) return alert("Remplis la marque et le modèle !");
+    const plaque = document.getElementById("plaque").value.trim();
+    
+    if (!marque || !modele) return alert("Veuillez saisir au moins la marque et le modèle.");
+
+    btn.disabled = true;
+    btn.innerText = "Chargement...";
 
     const file = document.getElementById("photo").files[0];
     const runSave = (photoData = "") => {
-        const tachesCochees = Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b => b.innerText.replace("✕","").trim());
-        const autres = document.getElementById("tachesAutres").value;
-        learnTasks(autres);
+        const checkedBtns = Array.from(document.querySelectorAll(".tacheBtn.checked"));
+        const selectedTaches = checkedBtns.map(b => b.innerText.replace("✕","").trim());
+        const extra = document.getElementById("tachesAutres").value;
         
-        const total = [...tachesCochees, ...autres.split(",").map(t=>t.trim()).filter(t=>t)].join(", ");
-        const now = Date.now();
+        learnTasks(extra);
+        const allTaches = [...selectedTaches, ...extra.split(",").map(t=>t.trim()).filter(t=>t)].join(", ");
         
-        cars.push({
-            photo: photoData, marque, modele, 
-            plaque: document.getElementById("plaque").value.toUpperCase(),
-            taches: total, date: now,
-            interventions: [{ date: now, taches: total }]
-        });
+        const carObj = {
+            photo: photoData, 
+            marque, 
+            modele, 
+            plaque: plaque.toUpperCase(),
+            taches: allTaches, 
+            date: Date.now(),
+            interventions: [{ date: Date.now(), taches: allTaches || "Entrée au garage" }]
+        };
         
-        saveAndRefresh();
-        ["photo", "marque", "modele", "plaque", "tachesAutres"].forEach(id => document.getElementById(id).value = "");
-        document.querySelectorAll(".tacheBtn.checked").forEach(b => b.classList.remove("checked"));
+        cars.push(carObj);
+        localStorage.setItem("cars", JSON.stringify(cars));
+        
+        // --- NETTOYAGE FORCE ---
+        document.getElementById("photo").value = "";
+        document.getElementById("marque").value = "";
+        document.getElementById("modele").value = "";
+        document.getElementById("plaque").value = "";
+        document.getElementById("tachesAutres").value = "";
+        checkedBtns.forEach(b => b.classList.remove("checked"));
+        
+        // Fermer le clavier sur mobile
+        document.activeElement.blur();
+        
+        setTimeout(() => {
+            displayCars();
+            updateCharts();
+            btn.disabled = false;
+            btn.innerText = "Enregistrer le véhicule";
+            alert("Véhicule ajouté avec succès !");
+        }, 300);
     };
 
     if (file) {
@@ -181,39 +208,49 @@ function addCar() {
     }
 }
 
-function saveAndRefresh() {
-    localStorage.setItem("cars", JSON.stringify(cars));
-    displayCars();
-    updateCharts();
-}
-
 function displayCars() {
-    const con = document.getElementById("cars"); con.innerHTML = "";
+    const con = document.getElementById("cars");
     const f = document.getElementById("filterMarque").value.toLowerCase();
     const s = document.getElementById("searchBar").value.toLowerCase();
     
-    cars.sort((a,b) => b.date - a.date).forEach((car, i) => {
+    con.innerHTML = "";
+    
+    // On travaille sur une copie triée
+    const sortedCars = [...cars].sort((a,b) => b.date - a.date);
+    
+    sortedCars.forEach((car) => {
+        const originalIndex = cars.indexOf(car);
         if (f && car.marque.toLowerCase() !== f) return;
         if (s && !(car.marque + " " + car.plaque).toLowerCase().includes(s)) return;
         
-        const div = document.createElement("div"); div.className = "car glass";
+        const div = document.createElement("div"); 
+        div.className = "car glass";
         div.innerHTML = `
             ${car.photo ? `<img src="${car.photo}">` : ``}
             <h3>${car.marque} ${car.modele}</h3>
             <p>🆔 Plaque : <b style="color:#27ae60">${car.plaque || '-'}</b></p>
-            <button class="editBtn" onclick="openModal(${i})">✏️ Réparations</button>
-            <button class="deleteBtn" style="opacity:0.6" onclick="if(confirm('Supprimer ?')){cars.splice(${i},1); saveAndRefresh();}">🗑️ Supprimer</button>
+            <button class="editBtn" onclick="openModal(${originalIndex})">✏️ Gérer les réparations</button>
+            <button class="deleteBtn" onclick="deleteCar(${originalIndex})">🗑️ Supprimer la fiche</button>
         `;
         con.appendChild(div);
     });
     updateFilter();
 }
 
+function deleteCar(index) {
+    if(confirm("Supprimer définitivement ce véhicule ?")) {
+        cars.splice(index, 1);
+        localStorage.setItem("cars", JSON.stringify(cars));
+        displayCars();
+        updateCharts();
+    }
+}
+
 function updateFilter() {
     const sel = document.getElementById("filterMarque");
     const val = sel.value;
     const marques = [...new Set(cars.map(c => c.marque))];
-    sel.innerHTML = '<option value="">Filtrer par marque</option>' + marques.map(m => `<option value="${m}">${m}</option>`).join('');
+    sel.innerHTML = '<option value="">Toutes les marques</option>' + marques.map(m => `<option value="${m}">${m}</option>`).join('');
     sel.value = val;
 }
 
@@ -224,6 +261,7 @@ function openModal(i) {
     document.getElementById('editMarque').value = c.marque;
     document.getElementById('editModele').value = c.modele;
     document.getElementById('newDate').valueAsDate = new Date();
+    document.getElementById('newTaches').value = "";
     refreshHistory(c);
     document.getElementById('editModal').style.display = 'block';
 }
@@ -231,11 +269,11 @@ function openModal(i) {
 function closeModal() { document.getElementById('editModal').style.display = 'none'; }
 
 function refreshHistory(c) {
-    const hist = c.interventions || [{date: c.date, taches: c.taches}];
+    const hist = c.interventions || [];
     document.getElementById('historyContainer').innerHTML = hist.map((int, idx) => `
         <div class="history-item">
             <div>📅 <b>${new Date(int.date).toLocaleDateString()}</b><br><small>${int.taches}</small></div>
-            <button onclick="delHist(${idx})" style="border:none; background:none; color:#e74c3c;">🗑️</button>
+            <button onclick="delHist(${idx})" style="border:none; background:none; font-size:18px;">🗑️</button>
         </div>
     `).join('');
 }
@@ -251,7 +289,10 @@ function addIntervention() {
     const t = document.getElementById('newTaches').value.trim();
     if(!t) return;
     learnTasks(t);
-    cars[i].interventions.push({ date: new Date(document.getElementById('newDate').value).getTime(), taches: t });
+    cars[i].interventions.push({ 
+        date: new Date(document.getElementById('newDate').value).getTime(), 
+        taches: t 
+    });
     cars[i].interventions.sort((a,b) => b.date - a.date);
     refreshHistory(cars[i]);
     document.getElementById('newTaches').value = "";
@@ -261,12 +302,12 @@ function saveCar() {
     const i = document.getElementById('editIndex').value;
     cars[i].marque = document.getElementById('editMarque').value;
     cars[i].modele = document.getElementById('editModele').value;
-    cars[i].taches = (cars[i].interventions || []).map(int => int.taches).join(', ');
-    saveAndRefresh();
+    localStorage.setItem("cars", JSON.stringify(cars));
+    displayCars();
+    updateCharts();
     closeModal();
 }
 
-// --- STATS ---
 function updateCharts() {
     const wrap = document.getElementById("chartsWrapper");
     const msg = document.getElementById("noDataMsg");
@@ -284,26 +325,29 @@ function updateCharts() {
 
     const cfg = (id, type, label, labels, data, color) => {
         if (myCharts[id]) myCharts[id].destroy();
-        myCharts[id] = new Chart(document.getElementById(id), {
+        const ctx = document.getElementById(id);
+        if(!ctx) return;
+        myCharts[id] = new Chart(ctx, {
             type, data: { labels, datasets: [{ label, data, backgroundColor: color, borderColor: color, tension: 0.3 }] },
-            options: { scales: type !== 'pie' ? { y: { beginAtZero: true, ticks: { color: 'white' } }, x: { ticks: { color: 'white' } } } : {} }
+            options: { scales: type !== 'pie' ? { y: { beginAtZero: true, ticks: { color: 'white', stepSize: 1 } }, x: { ticks: { color: 'white' } } } : {} }
         });
     };
 
-    cfg('chartMarques', 'bar', 'Marques', Object.keys(s.m), Object.values(s.m), '#27ae60');
-    cfg('chartTaches', 'pie', 'Travaux', Object.keys(s.t), Object.values(s.t), Object.keys(s.t).map((_,i)=>`hsla(${i*50},70%,50%,0.8)`));
-    cfg('chartMois', 'line', 'Par Mois', ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"], s.mo, '#3498db');
-    cfg('chartJours', 'line', 'Par Jour', Array.from({length:31},(_,i)=>i+1), s.j, '#e67e22');
+    cfg('chartMarques', 'bar', 'Véhicules', Object.keys(s.m), Object.values(s.m), '#27ae60');
+    cfg('chartTaches', 'pie', 'Réparations', Object.keys(s.t), Object.values(s.t), Object.keys(s.t).map((_,i)=>`hsla(${i*50},70%,50%,0.8)`));
+    cfg('chartMois', 'line', 'Activité Mensuelle', ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"], s.mo, '#3498db');
+    cfg('chartJours', 'line', 'Activité Quotidienne', Array.from({length:31},(_,i)=>i+1), s.j, '#e67e22');
 }
 
 function switchTab(i) {
     document.querySelectorAll(".tabBtn").forEach((b, idx) => b.classList.toggle("active", idx === i));
     document.querySelectorAll(".content").forEach((c, idx) => c.classList.toggle("active", idx === i));
-    if (i === 1) updateCharts();
+    if (i === 1) setTimeout(updateCharts, 100);
 }
 
-function clearDatabase() { if(confirm("Vraiment TOUT supprimer ?")) { cars = []; saveAndRefresh(); } }
+function clearDatabase() { if(confirm("Supprimer TOUT le garage ?")) { cars = []; localStorage.clear(); location.reload(); } }
 
+// Démarrage
 renderTaches();
 displayCars();
 </script>
