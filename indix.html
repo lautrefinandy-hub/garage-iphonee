@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Garage iPhone</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body {
+  font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Arial;
+  margin:0; padding:10px; background:#1c1c1c; color:white;
+}
+/* Tabs */
+.tabs{display:flex; margin-bottom:10px;}
+.tabBtn{flex:1;padding:12px;background:rgba(255,255,255,0.1);border:none;color:white;font-weight:bold;cursor:pointer;}
+.tabBtn.active{background:rgba(255,255,255,0.25);}
+.content{display:none;}
+.content.active{display:block;}
+/* Glass cards */
+.glass{background:rgba(255,255,255,0.05);backdrop-filter:blur(10px);padding:10px;border-radius:12px;margin:10px 0;}
+.tacheBtn{display:block;margin:4px 0;padding:8px;border-radius:10px;background:rgba(255,255,255,0.1);color:white;cursor:pointer;}
+.tacheBtn.checked{background:#27ae60;color:black;}
+button.addBtn{background:#27ae60;color:white;padding:10px;border-radius:10px;border:none;cursor:pointer;}
+button.deleteBtn{background:#e74c3c;color:white;padding:8px;border-radius:10px;border:none;cursor:pointer;}
+.car{background:rgba(255,255,255,0.05);padding:10px;border-radius:12px;margin:8px 0;}
+.car img{width:100%;border-radius:10px;}
+</style>
+</head>
+<body>
+
+<h2>🚗 Garage iPhone</h2>
+
+<div class="tabs">
+  <button class="tabBtn active" onclick="switchTab(0)">Ajouter voiture</button>
+  <button class="tabBtn" onclick="switchTab(1)">Statistiques</button>
+</div>
+
+<div class="content active" id="tabForm">
+  <div class="glass">
+    <input type="file" id="photo">
+    <input type="text" id="marque" placeholder="Marque">
+    <input type="text" id="modele" placeholder="Modèle">
+    <input type="text" id="plaque" placeholder="Plaque">
+    <p>✅ Tâches :</p>
+    <div id="tachesContainer"></div>
+    <input type="text" id="tachesAutres" placeholder="Autres tâches séparées par des virgules">
+    <button class="addBtn" onclick="addCar()">Ajouter</button>
+  </div>
+
+  <input type="text" id="searchBar" placeholder="🔎 Rechercher" oninput="displayCars()">
+  <select id="filterMarque" onchange="displayCars()">
+    <option value="">Filtrer par marque</option>
+  </select>
+
+  <div id="cars"></div>
+</div>
+
+<div class="content" id="tabStats">
+  <h3>📊 Statistiques</h3>
+  <canvas id="chartMarques"></canvas>
+  <canvas id="chartTaches"></canvas>
+  <canvas id="chartMois"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Données
+let cars = JSON.parse(localStorage.getItem("cars"))||[];
+let tachesPredefinies=[
+  "Disque de frein","Filtre à air","Filtre à gasoil","Filtre habitacle",
+  "Pneus Avant","Pneus Arrière","Plaquette de frein","Vidange et Filtre à Huile"
+];
+
+function switchTab(i){
+  document.querySelectorAll(".tabBtn").forEach((b,idx)=>b.classList.toggle("active",idx===i));
+  document.querySelectorAll(".content").forEach((c,idx)=>c.classList.toggle("active",idx===i));
+  if(i===1) updateCharts();
+}
+
+function renderTaches(){
+  const cont=document.getElementById("tachesContainer");
+  cont.innerHTML="";
+  tachesPredefinies.sort((a,b)=>a.localeCompare(b));
+  tachesPredefinies.forEach(t=>{
+    const btn=document.createElement("div");
+    btn.className="tacheBtn"; btn.innerText=t; btn.dataset.value=t;
+    btn.onclick=()=>btn.classList.toggle("checked");
+    cont.appendChild(btn);
+  });
+}
+
+function addCar(){
+  const file=document.getElementById("photo").files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const photoData=file?e.target.result:"";
+    const marque=document.getElementById("marque").value;
+    const modele=document.getElementById("modele").value;
+    const plaque=document.getElementById("plaque").value;
+    const tachesC=Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b=>b.dataset.value);
+    const tachesA=document.getElementById("tachesAutres").value
+      .split(",").map(t=>t.trim()).filter(t=>t);
+    tachesA.forEach(t=>{if(t&&!tachesPredefinies.includes(t))tachesPredefinies.push(t);});
+    const taches=[...tachesC,...tachesA].join(", ");
+    if(!marque||!modele){alert("Marque & modèle obligatoires");return;}
+    cars.push({photo:photoData,marque,modele,plaque,taches,date:Date.now()});
+    localStorage.setItem("cars",JSON.stringify(cars));
+    displayCars(); renderTaches();
+  };
+  if(file) reader.readAsDataURL(file); else reader.onload();
+}
+
+function displayCars(){
+  const con=document.getElementById("cars");
+  con.innerHTML="";
+  const f=document.getElementById("filterMarque").value.toLowerCase();
+  const s=document.getElementById("searchBar").value.toLowerCase();
+  cars.sort((a,b)=>b.date-a.date);
+  cars.forEach((car,i)=>{
+    if(f&&car.marque.toLowerCase()!==f) return;
+    if(s&&!(car.marque.toLowerCase()+" "+car.plaque.toLowerCase()).includes(s)) return;
+    const d=document.createElement("div"); d.className="car glass";
+    d.innerHTML=`${car.photo?`<img src="${car.photo}">`:``}
+      <h3>${car.marque} ${car.modele}</h3>
+      <p>🆔 Plaque : <input type="text" value="${car.plaque}"
+      onchange="cars[${i}].plaque=this.value.toUpperCase();localStorage.setItem('cars',JSON.stringify(cars));displayCars();"></p>
+      <p>${car.taches}</p>
+      <button class="deleteBtn" onclick="cars.splice(${i},1);localStorage.setItem('cars',JSON.stringify(cars));displayCars();">Supprimer</button>`;
+    con.appendChild(d);
+  });
+  updateFilterOptions();
+}
+function updateFilterOptions(){
+  const sel=document.getElementById("filterMarque");
+  const list=[...new Set(cars.map(c=>c.marque))];
+  sel.innerHTML='<option value="">Filtrer par marque</option>';
+  list.forEach(m=>sel.innerHTML+=`<option value="${m}">${m}</option>`);
+}
+
+// Graphiques
+let chartM,chartT,chartMo;
+function updateCharts(){
+  const md={},td={},mo={};
+  cars.forEach(c=>{
+    md[c.marque]=(md[c.marque]||0)+1;
+    c.taches.split(",").forEach(t=>{
+      const tt=t.trim(); if(tt) td[tt]=(td[tt]||0)+1;
+    });
+    const m=new Date(c.date).getMonth();
+    mo[m]=(mo[m]||0)+1;
+  });
+  const mL=Object.keys(md), mC=Object.values(md);
+  const tL=Object.keys(td), tC=Object.values(td);
+  const mois=["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+  const moC=Array.from({length:12},(_,i)=>mo[i]||0);
+
+  if(chartM) chartM.destroy();
+  chartM=new Chart(document.getElementById("chartMarques"),{type:'bar',data:{labels:mL,datasets:[{data:mC,backgroundColor:'#27ae60'}]},options:{responsive:true}});
+  if(chartT) chartT.destroy();
+  chartT=new Chart(document.getElementById("chartTaches"),{type:'pie',data:{labels:tL,datasets:[{data:tC,backgroundColor:tL.map(()=>`#${Math.floor(Math.random()*16777215).toString(16)}`)}]},options:{responsive:true}});
+  if(chartMo) chartMo.destroy();
+  chartMo=new Chart(document.getElementById("chartMois"),{type:'line',data:{labels:mois,datasets:[{data:moC,borderColor:'#3498db',backgroundColor:'#3498db22'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+}
+
+renderTaches(); displayCars();
+</script>
+
+</body>
+</html>
