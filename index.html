@@ -21,8 +21,9 @@ button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-r
 button.editBtn{background:#f39c12;color:white;padding:8px;border:none;border-radius:10px;margin-top:5px;width:100%;}
 .car{background:rgba(255,255,255,0.05);padding:10px;border-radius:12px;margin:10px 0;}
 .car img{width:100%;border-radius:10px;}
-.car input{background:rgba(255,255,255,0.1);border:none;color:white;padding:4px;border-radius:4px;width:90%;}
+.car input{background:rgba(255,255,255,0.1);border:none;color:white;padding:4px;border-radius:4px;width:90%;margin:2px 0;}
 .hidden{display:none;}
+canvas{margin:10px 0;border-radius:12px;background:rgba(255,255,255,0.05);padding:5px;}
 </style>
 </head>
 <body>
@@ -35,6 +36,7 @@ button.editBtn{background:#f39c12;color:white;padding:8px;border:none;border-rad
   <button class="tabBtn" onclick="switchTab(2)">Calendrier</button>
 </div>
 
+<!-- Garage -->
 <div class="content active">
 <div class="glass">
 <input type="file" id="photo">
@@ -53,11 +55,16 @@ button.editBtn{background:#f39c12;color:white;padding:8px;border:none;border-rad
 <div id="cars"></div>
 </div>
 
+<!-- Statistiques -->
 <div class="content">
 <h3>📊 Statistiques</h3>
+<canvas id="chartVoituresMois"></canvas>
+<canvas id="chartVoituresJour"></canvas>
 <canvas id="chartTaches"></canvas>
+<canvas id="chartReparationsParVoiture"></canvas>
 </div>
 
+<!-- Calendrier -->
 <div class="content">
 <h3>📅 Calendrier des réparations</h3>
 <div id="calendar"></div>
@@ -65,10 +72,11 @@ button.editBtn{background:#f39c12;color:white;padding:8px;border:none;border-rad
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-let cars = JSON.parse(localStorage.getItem("cars"))||[];
-let tachesPredefinies=["Vidange et Filtre à Huile","Batterie","Plaquettes de Frein","Disque de Frein","Pneu Avant","Pneu Arrière","Filtre à air","Filtre à Gasoil","Filtre Habitacle"];
+let cars = JSON.parse(localStorage.getItem("cars")) || [];
+let tachesPredefinies = ["Vidange et Filtre à Huile","Batterie","Plaquettes de Frein","Disque de Frein","Pneu Avant","Pneu Arrière","Filtre à air","Filtre à Gasoil","Filtre Habitacle"];
 let editingIndex = null;
 
+// Tabs
 function switchTab(i){
   document.querySelectorAll(".tabBtn").forEach((b,idx)=>b.classList.toggle("active",idx===i));
   document.querySelectorAll(".content").forEach((c,idx)=>c.classList.toggle("active",idx===i));
@@ -76,33 +84,33 @@ function switchTab(i){
   if(i===2) updateCalendar();
 }
 
+// Taches
 function renderTaches(selected=[]){
-  const container=document.getElementById("tachesContainer");
-  container.innerHTML="";
-  tachesPredefinies.forEach(t=>{
-    const btn=document.createElement("button");
-    btn.className="tacheBtn";
-    btn.innerText=t;
-    btn.dataset.value=t;
+  const container = document.getElementById("tachesContainer");
+  container.innerHTML = "";
+  tachesPredefinies.forEach(t => {
+    const btn = document.createElement("button");
+    btn.className = "tacheBtn";
+    btn.innerText = t;
+    btn.dataset.value = t;
     if(selected.includes(t)) btn.classList.add("checked");
-    btn.onclick=()=>btn.classList.toggle("checked");
+    btn.onclick = ()=> btn.classList.toggle("checked");
     container.appendChild(btn);
   });
 }
 
+// Ajouter / modifier voiture
 function addCar(){
   const file = document.getElementById("photo").files[0];
-  const reader = new FileReader();
-  reader.onload = function(e){
-    const photoData = file ? e.target.result : null;
-    const marque=document.getElementById("marque").value.trim();
-    const modele=document.getElementById("modele").value.trim();
-    const plaque=document.getElementById("plaque").value.trim() || ("VOITURE"+Date.now());
-    const dateRep=document.getElementById("dateRep").value || new Date().toISOString().split("T")[0];
-    const tachesCochees=Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b=>b.dataset.value);
-    const tachesAutres=document.getElementById("tachesAutres").value.split(",").map(t=>t.trim()).filter(t=>t);
-    const toutesTaches=[...tachesCochees,...tachesAutres];
-    if(!marque||!modele){alert("Marque et modèle obligatoires");return;}
+  const processCar = (photoData) => {
+    const marque = document.getElementById("marque").value.trim();
+    const modele = document.getElementById("modele").value.trim();
+    const plaque = document.getElementById("plaque").value.trim() || ("VOITURE" + Date.now());
+    const dateRep = document.getElementById("dateRep").value || new Date().toISOString().split("T")[0];
+    const tachesCochees = Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b=>b.dataset.value);
+    const tachesAutres = document.getElementById("tachesAutres").value.split(",").map(t=>t.trim()).filter(t=>t);
+    const toutesTaches = [...tachesCochees, ...tachesAutres];
+    if(!marque||!modele){alert("Marque et modèle obligatoires"); return;}
     if(toutesTaches.length===0) toutesTaches.push("Aucune tâche");
 
     if(editingIndex !== null){
@@ -114,42 +122,51 @@ function addCar(){
       car.reparations.push({date: dateRep, taches: toutesTaches});
       editingIndex = null;
     } else {
-      let car = {marque, modele, plaque, photo: photoData, reparations: [{date: dateRep, taches: toutesTaches}]};
-      cars.push(car);
+      cars.push({marque, modele, plaque, photo: photoData || "", reparations:[{date:dateRep,taches:toutesTaches}]});
     }
 
     localStorage.setItem("cars", JSON.stringify(cars));
     displayCars();
     updateCalendar();
     renderTaches();
+    resetForm();
+  }
 
-    document.getElementById("marque").value="";
-    document.getElementById("modele").value="";
-    document.getElementById("plaque").value="";
-    document.getElementById("dateRep").value="";
-    document.getElementById("tachesAutres").value="";
-    document.getElementById("photo").value="";
-    document.querySelectorAll(".tacheBtn.checked").forEach(b=>b.classList.remove("checked"));
-  };
-  if(file) reader.readAsDataURL(file); else reader.onload();
+  if(file){
+    const reader = new FileReader();
+    reader.onloadend = e => processCar(e.target.result);
+    reader.readAsDataURL(file);
+  } else {
+    processCar(""); // fallback iPhone
+  }
 }
 
+function resetForm(){
+  document.getElementById("marque").value="";
+  document.getElementById("modele").value="";
+  document.getElementById("plaque").value="";
+  document.getElementById("dateRep").value="";
+  document.getElementById("tachesAutres").value="";
+  document.getElementById("photo").value="";
+  document.querySelectorAll(".tacheBtn.checked").forEach(b=>b.classList.remove("checked"));
+}
+
+// Affichage voitures
 function displayCars(){
-  const con=document.getElementById("cars");
-  con.innerHTML="";
+  const con = document.getElementById("cars");
+  con.innerHTML = "";
   cars.forEach((car,i)=>{
-    const div=document.createElement("div");
-    div.className="car glass";
-    div.innerHTML=`
-      ${car.photo?`<img src="${car.photo}">`:''}
+    const div = document.createElement("div");
+    div.className = "car glass";
+    div.innerHTML = `
+      ${car.photo ? `<img src="${car.photo}">` : ""}
       <input type="text" value="${car.marque}" onchange="cars[${i}].marque=this.value; localStorage.setItem('cars',JSON.stringify(cars))">
       <input type="text" value="${car.modele}" onchange="cars[${i}].modele=this.value; localStorage.setItem('cars',JSON.stringify(cars))">
       <input type="text" value="${car.plaque}" onchange="cars[${i}].plaque=this.value; localStorage.setItem('cars',JSON.stringify(cars))">
       <button class="editBtn" onclick="editCar(${i})">✏️ Ajouter réparation</button>
       <button class="addBtn" onclick="toggleHistory(${i})">📂 Voir Historique</button>
       <div id="history${i}" class="hidden">
-        ${car.reparations.map(rep=>`<div style="margin:5px 0;padding:5px;background:rgba(255,255,255,0.05);border-radius:8px;">
-        <b>${rep.date}</b><br>${rep.taches.join(", ")}</div>`).join('')}
+        ${car.reparations.map(rep=>`<div style="margin:5px 0;padding:5px;background:rgba(255,255,255,0.05);border-radius:8px;"><b>${rep.date}</b><br>${rep.taches.join(", ")}</div>`).join('')}
       </div>
       <button class="deleteBtn" onclick="deleteCar(${i})">Supprimer</button>
     `;
@@ -157,6 +174,7 @@ function displayCars(){
   });
 }
 
+// Modifier voiture
 function editCar(i){
   const car = cars[i];
   document.getElementById("marque").value = car.marque;
@@ -165,14 +183,47 @@ function editCar(i){
   renderTaches(car.reparations[car.reparations.length-1].taches);
   editingIndex = i;
 }
-
 function toggleHistory(i){document.getElementById("history"+i).classList.toggle("hidden");}
 function deleteCar(i){cars.splice(i,1); localStorage.setItem("cars",JSON.stringify(cars)); displayCars(); updateCalendar();}
+
+// Charts
+let chartVoituresMois, chartVoituresJour, chartTaches, chartReparationsParVoiture;
 function updateCharts(){
-  const tachesData={};
-  cars.forEach(c=>c.reparations.forEach(rep=>rep.taches.forEach(t=>tachesData[t]=(tachesData[t]||0)+1)));
-  new Chart(document.getElementById("chartTaches"),{type:'pie',data:{labels:Object.keys(tachesData),datasets:[{data:Object.values(tachesData)}]}});
+  if(cars.length===0) return;
+
+  // Voitures par mois
+  let moisData = Array(12).fill(0);
+  let joursData = Array(31).fill(0);
+  let tachesData = {};
+  let reparationsParVoiture = {};
+
+  cars.forEach(c=>{
+    reparationsParVoiture[`${c.marque} ${c.modele}`] = c.reparations.length;
+    c.reparations.forEach(rep=>{
+      const d = new Date(rep.date);
+      moisData[d.getMonth()]++;
+      joursData[d.getDate()-1]++;
+      rep.taches.forEach(t=>tachesData[t]=(tachesData[t]||0)+1);
+    });
+  });
+
+  const moisLabels=["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+  const joursLabels=Array.from({length:31},(_,i)=>i+1);
+
+  if(chartVoituresMois) chartVoituresMois.destroy();
+  chartVoituresMois = new Chart(document.getElementById("chartVoituresMois"),{type:'bar',data:{labels:moisLabels,datasets:[{label:'Voitures/mois',data:moisData,backgroundColor:'#3498db'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+
+  if(chartVoituresJour) chartVoituresJour.destroy();
+  chartVoituresJour = new Chart(document.getElementById("chartVoituresJour"),{type:'bar',data:{labels:joursLabels,datasets:[{label:'Voitures/jour',data:joursData,backgroundColor:'#e67e22'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+
+  if(chartTaches) chartTaches.destroy();
+  chartTaches = new Chart(document.getElementById("chartTaches"),{type:'pie',data:{labels:Object.keys(tachesData),datasets:[{data:Object.values(tachesData),backgroundColor:Object.keys(tachesData).map(()=>`#${Math.floor(Math.random()*16777215).toString(16)}`)}]},options:{responsive:true}});
+
+  if(chartReparationsParVoiture) chartReparationsParVoiture.destroy();
+  chartReparationsParVoiture = new Chart(document.getElementById("chartReparationsParVoiture"),{type:'bar',data:{labels:Object.keys(reparationsParVoiture),datasets:[{label:'Réparations',data:Object.values(reparationsParVoiture),backgroundColor:'#27ae60'}]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
 }
+
+// Calendrier
 function updateCalendar(){
   const cal=document.getElementById("calendar");
   cal.innerHTML="";
@@ -182,9 +233,11 @@ function updateCalendar(){
   all.forEach(e=>cal.innerHTML+=`<div style="margin:5px 0;padding:8px;background:rgba(255,255,255,0.05);border-radius:8px;"><b>${e.date}</b><br>${e.text}</div>`);
 }
 
+// Initialisation
 renderTaches();
 displayCars();
 updateCalendar();
+updateCharts();
 </script>
 </body>
 </html>
