@@ -18,6 +18,7 @@ h2,h3{text-align:center;margin:5px;}
 .tacheBtn.checked{background:#27ae60;color:black;}
 button.addBtn{background:#27ae60;color:white;padding:10px;border:none;border-radius:10px;margin-top:5px;cursor:pointer;width:100%;}
 button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-radius:10px;margin-top:5px;width:100%;}
+button.editBtn{background:#f39c12;color:white;padding:8px;border:none;border-radius:10px;margin-top:5px;width:100%;}
 .car{background:rgba(255,255,255,0.05);padding:10px;border-radius:12px;margin:10px 0;}
 .car img{width:100%;border-radius:10px;}
 .hidden{display:none;}
@@ -47,6 +48,7 @@ button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-r
 <button class="addBtn" onclick="addCar()">Ajouter voiture</button>
 </div>
 
+<h3>🚘 Liste des voitures</h3>
 <div id="cars"></div>
 </div>
 
@@ -64,6 +66,7 @@ button.deleteBtn{background:#e74c3c;color:white;padding:8px;border:none;border-r
 <script>
 let cars = JSON.parse(localStorage.getItem("cars"))||[];
 let tachesPredefinies=["Vidange et Filtre à Huile","Batterie","Plaquettes de Frein","Disque de Frein","Pneu Avant","Pneu Arrière","Filtre à air","Filtre à Gasoil","Filtre Habitacle"];
+let editingIndex = null; // Index de la voiture en modification
 
 function switchTab(i){
   document.querySelectorAll(".tabBtn").forEach((b,idx)=>b.classList.toggle("active",idx===i));
@@ -72,12 +75,15 @@ function switchTab(i){
   if(i===2) updateCalendar();
 }
 
-function renderTaches(){
+function renderTaches(selected=[]) {
   const container=document.getElementById("tachesContainer");
   container.innerHTML="";
   tachesPredefinies.forEach(t=>{
     const btn=document.createElement("button");
-    btn.className="tacheBtn"; btn.innerText=t; btn.dataset.value=t;
+    btn.className="tacheBtn";
+    btn.innerText=t;
+    btn.dataset.value=t;
+    if(selected.includes(t)) btn.classList.add("checked");
     btn.onclick=()=>btn.classList.toggle("checked");
     container.appendChild(btn);
   });
@@ -91,20 +97,27 @@ function addCar(){
   const tachesCochees=Array.from(document.querySelectorAll(".tacheBtn.checked")).map(b=>b.dataset.value);
   const tachesAutres=document.getElementById("tachesAutres").value.split(",").map(t=>t.trim()).filter(t=>t);
   const toutesTaches=[...tachesCochees,...tachesAutres];
-
   if(!marque||!modele) { alert("Marque et modèle obligatoires"); return; }
-  if(toutesTaches.length===0) toutesTaches.push("Aucune tâche"); // Ajoute tâche par défaut si vide
+  if(toutesTaches.length===0) toutesTaches.push("Aucune tâche");
 
-  let car=cars.find(c=>c.plaque===plaque);
-  if(!car){
-    car={marque,modele,plaque,reparations:[]};
+  if(editingIndex !== null){
+    // Modifier voiture existante
+    let car = cars[editingIndex];
+    car.marque = marque;
+    car.modele = modele;
+    car.plaque = plaque;
+    car.reparations.push({date: dateRep, taches: toutesTaches});
+    editingIndex = null;
+  } else {
+    // Nouvelle voiture
+    let car = {marque, modele, plaque, photo: null, reparations: [{date: dateRep, taches: toutesTaches}]};
     cars.push(car);
   }
 
-  car.reparations.push({date:dateRep,taches:toutesTaches});
-  localStorage.setItem("cars",JSON.stringify(cars));
+  localStorage.setItem("cars", JSON.stringify(cars));
   displayCars();
   updateCalendar();
+  renderTaches();
 
   // Reset formulaire
   document.getElementById("marque").value="";
@@ -124,6 +137,7 @@ function displayCars(){
     div.innerHTML=`
       <h3>${car.marque} ${car.modele}</h3>
       <p>🆔 ${car.plaque}</p>
+      <button class="editBtn" onclick="editCar(${i})">✏️ Modifier</button>
       <button class="addBtn" onclick="toggleHistory(${i})">📂 Voir Historique</button>
       <div id="history${i}" class="hidden">
         ${car.reparations.map(rep=>`
@@ -138,9 +152,19 @@ function displayCars(){
   });
 }
 
-function toggleHistory(i){
-  document.getElementById("history"+i).classList.toggle("hidden");
+function editCar(i){
+  const car = cars[i];
+  document.getElementById("marque").value = car.marque;
+  document.getElementById("modele").value = car.modele;
+  document.getElementById("plaque").value = car.plaque;
+  // Préselection des tâches de la dernière réparation
+  let lastRep = car.reparations[car.reparations.length - 1];
+  renderTaches(lastRep.taches);
+  document.getElementById("tachesAutres").value = "";
+  editingIndex = i;
 }
+
+function toggleHistory(i){ document.getElementById("history"+i).classList.toggle("hidden"); }
 
 function deleteCar(i){
   cars.splice(i,1);
@@ -153,9 +177,7 @@ function updateCharts(){
   const tachesData={};
   cars.forEach(c=>{
     c.reparations.forEach(rep=>{
-      rep.taches.forEach(t=>{
-        tachesData[t]=(tachesData[t]||0)+1;
-      });
+      rep.taches.forEach(t=>{ tachesData[t]=(tachesData[t]||0)+1; });
     });
   });
   new Chart(document.getElementById("chartTaches"),{
