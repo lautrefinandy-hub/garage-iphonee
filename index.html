@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Garage Pro iOS</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg-color: #000000;
@@ -46,7 +46,7 @@
       border: 1px solid var(--card-border);
       border-radius: 16px;
       padding: 18px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     }
 
@@ -107,7 +107,7 @@
     .btn-green { background-color: var(--accent-green); color: #000; }
     .btn-outline { background: transparent; border: 1px solid var(--accent-blue); color: var(--accent-blue); }
 
-    /* Tags/Catégories sous forme de Checkbox Pills */
+    /* Tags/Catégories */
     .categories-grid {
       display: flex;
       flex-wrap: wrap;
@@ -166,6 +166,25 @@
       background: var(--accent-orange);
       color: #000;
       border-color: var(--accent-orange);
+    }
+
+    /* Séparateur / En-tête de date style iOS */
+    .date-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      text-transform: capitalize;
+      margin: 24px 0 10px 4px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .date-header::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.15);
     }
 
     /* Carte Véhicule */
@@ -243,7 +262,6 @@
     <label>Sélectionner les opérations</label>
     <div class="categories-grid" id="categoriesContainer"></div>
 
-    <!-- Ajouter sa propre catégorie -->
     <div class="add-cat-box">
       <input type="text" id="customCatInput" placeholder="Autre opération (ex: Courroie)">
       <button type="button" class="btn btn-outline" style="width: auto; margin:0;" onclick="ajouterNouvelleCategorie()">+</button>
@@ -266,12 +284,10 @@
   <div id="listeVehicules"></div>
 
   <script>
-    // Liste par défaut des catégories
     let categoriesList = ["Vidange", "Freins", "Pneus", "Révision", "Distribution"];
     let selectedCategories = [];
     let filtreActif = "TOUS";
 
-    // 1. Initialisation
     function init() {
       const savedCats = JSON.parse(localStorage.getItem('garage_categories'));
       if (savedCats) categoriesList = savedCats;
@@ -281,7 +297,6 @@
       afficherVehicules();
     }
 
-    // 2. Affichage des catégories sélectionnables
     function renderCategories() {
       const container = document.getElementById('categoriesContainer');
       container.innerHTML = categoriesList.map(cat => `
@@ -313,7 +328,6 @@
       }
     }
 
-    // 3. Affichage des filtres
     function renderFilters() {
       const filterBar = document.getElementById('filterBar');
       const filtres = ["TOUS", ...categoriesList];
@@ -330,26 +344,58 @@
       afficherVehicules();
     }
 
-    // 4. Lecture OCR de la plaque
+    // OCR CAMERA
     document.getElementById('camera').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
       const plaqueInput = document.getElementById('plaqueInput');
-      plaqueInput.value = "Analyse...";
+      plaqueInput.value = "Analyse en cours...";
 
-      Tesseract.recognize(file, 'eng')
+      let isFinished = false;
+      const timerAlert = setTimeout(() => {
+        if (!isFinished) {
+          isFinished = true;
+          plaqueInput.value = "";
+          alert("L'analyse a pris trop de temps. Réessaye avec une photo plus nette.");
+        }
+      }, 10000);
+
+      Tesseract.recognize(file, 'eng', { logger: m => console.log(m) })
         .then(({ data: { text } }) => {
+          if (isFinished) return;
+          isFinished = true;
+          clearTimeout(timerAlert);
           const texteNettoye = text.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
           plaqueInput.value = texteNettoye || text.trim();
         })
         .catch(() => {
+          if (isFinished) return;
+          isFinished = true;
+          clearTimeout(timerAlert);
           plaqueInput.value = "";
-          alert("Erreur lors de la lecture.");
+          alert("Erreur d'analyse. Rentre la plaque manuellement.");
         });
     });
 
-    // 5. Enregistrement du véhicule
+    // Formater la date pour l'en-tête (ex: "Aujourd'hui", "Hier", "Mercredi 9 septembre")
+    function formaterDateGroupe(dateIso) {
+      const dateVehicule = new Date(dateIso);
+      const aujourdhui = new Date();
+      const hier = new Date();
+      hier.setDate(aujourdhui.getDate() - 1);
+
+      const dVehiculeStr = dateVehicule.toDateString();
+      if (dVehiculeStr === aujourdhui.toDateString()) return "Aujourd'hui";
+      if (dVehiculeStr === hier.toDateString()) return "Hier";
+
+      return dateVehicule.toLocaleDateString('fr-FR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long'
+      });
+    }
+
     function enregistrerVehicule() {
       const plaque = document.getElementById('plaqueInput').value.trim();
       const details = document.getElementById('tachesInput').value.trim();
@@ -364,12 +410,14 @@
         tasks.push({ title: details, done: true });
       }
 
+      const maintenant = new Date();
       const vehicule = {
         id: Date.now(),
         plaque: plaque,
         categories: selectedCategories,
         tasks: tasks,
-        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
+        timestamp: maintenant.getTime(), // Pour le tri chronologique parfait
+        heure: maintenant.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       };
 
       const mecanoData = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
@@ -383,16 +431,26 @@
       afficherVehicules();
     }
 
-    // 6. Affichage et filtrage de la liste
     function afficherVehicules() {
       const container = document.getElementById('listeVehicules');
       const search = document.getElementById('searchInput').value.toUpperCase();
       let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
 
+      // Migration si anciennes données sans timestamp
+      list = list.map(v => {
+        if (!v.timestamp) v.timestamp = v.id || Date.now();
+        return v;
+      });
+
+      // Tri du plus récent au plus ancien
+      list.sort((a, b) => b.timestamp - a.timestamp);
+
+      // Filtre par catégorie
       if (filtreActif !== "TOUS") {
         list = list.filter(v => v.categories && v.categories.includes(filtreActif));
       }
 
+      // Filtre par recherche
       if (search) {
         list = list.filter(v => v.plaque.includes(search));
       }
@@ -402,22 +460,40 @@
         return;
       }
 
-      container.innerHTML = list.map(v => `
-        <div class="glass-card vehicle-card">
-          <button class="delete-btn" onclick="supprimerVehicule(${v.id})">✕</button>
-          <div class="plaque-badge">${v.plaque}</div>
-          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">${v.date}</div>
-          
-          <ul class="task-list">
-            ${v.tasks.map((t, idx) => `
-              <li class="task-item ${t.done ? 'done' : ''}">
-                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone(${v.id}, ${idx})">
-                <span>${t.title}</span>
-              </li>
-            `).join('')}
-          </ul>
-        </div>
-      `).join('');
+      // Regroupement par jour
+      let html = "";
+      let dernierGroupe = "";
+
+      list.forEach(v => {
+        const groupeDate = formaterDateGroupe(v.timestamp);
+
+        // Si on change de jour, on crée un nouvel en-tête de date
+        if (groupeDate !== dernierGroupe) {
+          html += `<div class="date-header">📅 ${groupeDate}</div>`;
+          dernierGroupe = groupeDate;
+        }
+
+        html += `
+          <div class="glass-card vehicle-card">
+            <button class="delete-btn" onclick="supprimerVehicule(${v.id})">✕</button>
+            <div class="plaque-badge">${v.plaque}</div>
+            <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">
+              Heure : ${v.heure || ''}
+            </div>
+            
+            <ul class="task-list">
+              ${v.tasks.map((t, idx) => `
+                <li class="task-item ${t.done ? 'done' : ''}">
+                  <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone(${v.id}, ${idx})">
+                  <span>${t.title}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
     }
 
     function toggleTaskDone(vehiculeId, taskIdx) {
