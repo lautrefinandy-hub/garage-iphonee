@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Garage Express</title>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.min.js"></script>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
+      background-color: #000;
+      color: #fff;
+      padding: 12px;
+      margin: 0;
+      padding-bottom: 30px;
+    }
+
+    /* Bouton principal SCAN géant */
+    .btn-scan {
+      width: 100%;
+      background: #0a84ff;
+      color: #fff;
+      border: none;
+      padding: 18px;
+      border-radius: 14px;
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4);
+    }
+
+    .btn-scan:active { transform: scale(0.98); opacity: 0.9; }
+
+    /* Entrée Plaque */
+    .plaque-box {
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: #1c1c1e;
+      border: 1px solid #3a3a3c;
+      color: #fff;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+
+    /* Grille de boutons rapides (Coher direct) */
+    .grid-fast {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .chip-btn {
+      background: #1c1c1e;
+      border: 1px solid #3a3a3c;
+      color: #8e8e93;
+      padding: 14px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .chip-btn.selected {
+      background: #30d158;
+      color: #000;
+      border-color: #30d158;
+      font-weight: 700;
+    }
+
+    /* Bouton Valider rapide */
+    .btn-save {
+      width: 100%;
+      background: #ff9f0a;
+      color: #000;
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 700;
+      margin-top: 14px;
+      cursor: pointer;
+    }
+
+    /* Barre de recherche / filtre */
+    .search-bar {
+      margin-top: 25px;
+      margin-bottom: 12px;
+    }
+
+    /* Carte Véhicule dans l'historique */
+    .card {
+      background: #1c1c1e;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      border: 1px solid #2c2c2e;
+      position: relative;
+    }
+
+    .plaque-tag {
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: 800;
+      background: #fff;
+      color: #000;
+      padding: 4px 8px;
+      border-radius: 6px;
+      display: inline-block;
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .tag {
+      background: #2c2c2e;
+      color: #30d158;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+    }
+
+    .date-text {
+      font-size: 11px;
+      color: #8e8e93;
+      float: right;
+      margin-top: 6px;
+    }
+
+    .del-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: none;
+      border: none;
+      color: #ff453a;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BOUTON CAMERA DIRECT -->
+  <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
+  <button class="btn-scan" onclick="document.getElementById('camera').click()">
+    📸 SCANNER LA PLAQUE
+  </button>
+
+  <!-- PLAQUE -->
+  <div class="plaque-box">
+    <input type="text" id="plaqueInput" placeholder="PLAQUE (EX: AB-123-CD)">
+  </div>
+
+  <!-- TÂCHES RAPIDES EN 1 CLIC -->
+  <div class="grid-fast" id="gridTaches"></div>
+
+  <!-- VALIDER -->
+  <button class="btn-save" onclick="validerFast()">⚡ ENREGISTRER</button>
+
+  <!-- RECHERCHE RAPIDE -->
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="🔍 Chercher une plaque..." oninput="afficherLister()" style="font-size:15px; padding:10px;">
+  </div>
+
+  <!-- HISTORIQUE -->
+  <div id="liste"></div>
+
+  <script>
+    // Liste des tâches courantes au garage
+    const TACHES_DEFAULT = ["Vidange", "Freins", "Pneus", "Révision", "Bougies", "Distribution"];
+    let tachesSelectionnees = [];
+
+    function init() {
+      renderTaches();
+      afficherLister();
+    }
+
+    function renderTaches() {
+      const container = document.getElementById('gridTaches');
+      container.innerHTML = TACHES_DEFAULT.map(t => `
+        <div class="chip-btn ${tachesSelectionnees.includes(t) ? 'selected' : ''}" onclick="toggleTache('${t}')">
+          ${tachesSelectionnees.includes(t) ? '✓ ' : ''}${t}
+        </div>
+      `).join('');
+    }
+
+    function toggleTache(tache) {
+      if (tachesSelectionnees.includes(tache)) {
+        tachesSelectionnees = tachesSelectionnees.filter(item => item !== tache);
+      } else {
+        tachesSelectionnees.push(tache);
+      }
+      renderTaches();
+    }
+
+    // OCR CAMERA
+    document.getElementById('camera').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const input = document.getElementById('plaqueInput');
+      input.value = "LECTURE...";
+
+      Tesseract.recognize(file, 'eng')
+        .then(({ data: { text } }) => {
+          const nettoye = text.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+          input.value = nettoye || text.trim();
+        })
+        .catch(() => { input.value = ""; });
+    });
+
+    // SAUVEGARDE EN 1 CLIC
+    function validerFast() {
+      const plaque = document.getElementById('plaqueInput').value.trim();
+      if (!plaque) return alert("Plaque vide !");
+
+      const vehicule = {
+        id: Date.now(),
+        plaque: plaque,
+        taches: tachesSelectionnees.length > 0 ? tachesSelectionnees : ["Contrôle général"],
+        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      };
+
+      const data = JSON.parse(localStorage.getItem('garage_fast')) || [];
+      data.unshift(vehicule);
+      localStorage.setItem('garage_fast', JSON.stringify(data));
+
+      // Reset express
+      document.getElementById('plaqueInput').value = "";
+      tachesSelectionnees = [];
+      renderTaches();
+      afficherLister();
+    }
+
+    function afficherLister() {
+      const container = document.getElementById('liste');
+      const search = document.getElementById('searchInput').value.toUpperCase();
+      let data = JSON.parse(localStorage.getItem('garage_fast')) || [];
+
+      if (search) {
+        data = data.filter(v => v.plaque.includes(search));
+      }
+
+      container.innerHTML = data.map(v => `
+        <div class="card">
+          <button class="del-btn" onclick="supprimer(${v.id})">✕</button>
+          <span class="plaque-tag">${v.plaque}</span>
+          <span class="date-text">${v.date}</span>
+          <div class="tags-container">
+            ${v.taches.map(t => `<span class="tag">✓ ${t}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function supprimer(id) {
+      let data = JSON.parse(localStorage.getItem('garage_fast')) || [];
+      data = data.filter(v => v.id !== id);
+      localStorage.setItem('garage_fast', JSON.stringify(data));
+      afficherLister();
+    }
+
+    init();
+  </script>
+</body>
+</html>
