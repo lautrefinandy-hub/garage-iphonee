@@ -3,284 +3,440 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Garage Express</title>
+  <title>Garage Pro iOS</title>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.min.js"></script>
   <style>
-    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Roboto, sans-serif;
-      background-color: #000;
-      color: #fff;
-      padding: 12px;
-      margin: 0;
-      padding-bottom: 30px;
+    :root {
+      --bg-color: #000000;
+      --card-bg: rgba(28, 28, 30, 0.85);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --accent-blue: #0a84ff;
+      --accent-green: #30d158;
+      --accent-orange: #ff9f0a;
+      --text-main: #ffffff;
+      --text-secondary: #8e8e93;
+      --input-bg: rgba(44, 44, 46, 0.8);
     }
 
-    /* Bouton principal SCAN géant */
-    .btn-scan {
-      width: 100%;
-      background: #0a84ff;
-      color: #fff;
-      border: none;
-      padding: 18px;
-      border-radius: 14px;
-      font-size: 18px;
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 16px;
+      margin: 0;
+      padding-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 28px;
       font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-top: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    /* Styles Glassmorphism Apple */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-top: 0;
+      margin-bottom: 14px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      display: block;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"], textarea, select {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 16px;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input[type="text"]:focus, textarea:focus, select:focus {
+      border-color: var(--accent-blue);
+    }
+
+    /* Boutons Style iOS */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(10, 132, 255, 0.4);
-    }
-
-    .btn-scan:active { transform: scale(0.98); opacity: 0.9; }
-
-    /* Entrée Plaque */
-    .plaque-box {
-      margin-top: 12px;
-      display: flex;
-      gap: 8px;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      background: #1c1c1e;
-      border: 1px solid #3a3a3c;
-      color: #fff;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 20px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      text-align: center;
-    }
-
-    /* Grille de boutons rapides (Coher direct) */
-    .grid-fast {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
       gap: 8px;
       margin-top: 12px;
+      transition: opacity 0.15s;
     }
 
-    .chip-btn {
-      background: #1c1c1e;
-      border: 1px solid #3a3a3c;
-      color: #8e8e93;
-      padding: 14px;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 600;
-      text-align: center;
-      cursor: pointer;
-      user-select: none;
-    }
+    .btn:active { opacity: 0.7; }
+    .btn-blue { background-color: var(--accent-blue); color: #fff; }
+    .btn-green { background-color: var(--accent-green); color: #000; }
+    .btn-outline { background: transparent; border: 1px solid var(--accent-blue); color: var(--accent-blue); }
 
-    .chip-btn.selected {
-      background: #30d158;
-      color: #000;
-      border-color: #30d158;
-      font-weight: 700;
-    }
-
-    /* Bouton Valider rapide */
-    .btn-save {
-      width: 100%;
-      background: #ff9f0a;
-      color: #000;
-      border: none;
-      padding: 16px;
-      border-radius: 12px;
-      font-size: 17px;
-      font-weight: 700;
-      margin-top: 14px;
-      cursor: pointer;
-    }
-
-    /* Barre de recherche / filtre */
-    .search-bar {
-      margin-top: 25px;
-      margin-bottom: 12px;
-    }
-
-    /* Carte Véhicule dans l'historique */
-    .card {
-      background: #1c1c1e;
-      border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 10px;
-      border: 1px solid #2c2c2e;
-      position: relative;
-    }
-
-    .plaque-tag {
-      font-family: monospace;
-      font-size: 18px;
-      font-weight: 800;
-      background: #fff;
-      color: #000;
-      padding: 4px 8px;
-      border-radius: 6px;
-      display: inline-block;
-    }
-
-    .tags-container {
+    /* Tags/Catégories sous forme de Checkbox Pills */
+    .categories-grid {
       display: flex;
       flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .cat-pill {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
       gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .cat-pill.active {
+      background: var(--accent-blue);
+      color: #fff;
+      border-color: var(--accent-blue);
+    }
+
+    .add-cat-box {
+      display: flex;
+      gap: 8px;
       margin-top: 10px;
     }
 
-    .tag {
-      background: #2c2c2e;
-      color: #30d158;
-      font-size: 12px;
+    /* Filtres et recherche */
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+      overflow-x: auto;
+      padding-bottom: 5px;
+    }
+
+    .filter-chip {
+      background: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-secondary);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 600;
-      padding: 4px 8px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      background: var(--accent-orange);
+      color: #000;
+      border-color: var(--accent-orange);
+    }
+
+    /* Carte Véhicule */
+    .vehicle-card {
+      position: relative;
+      border-left: 5px solid var(--accent-blue);
+    }
+
+    .plaque-badge {
+      font-family: monospace;
+      font-size: 20px;
+      font-weight: 700;
+      background: #ffffff;
+      color: #000000;
+      padding: 4px 10px;
       border-radius: 6px;
+      border: 2px solid #000;
+      display: inline-block;
+      letter-spacing: 1px;
     }
 
-    .date-text {
-      font-size: 11px;
-      color: #8e8e93;
-      float: right;
-      margin-top: 6px;
+    .task-list {
+      margin-top: 10px;
+      padding: 0;
+      list-style: none;
     }
 
-    .del-btn {
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .task-item input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--accent-green);
+    }
+
+    .task-item.done {
+      text-decoration: line-through;
+      color: var(--text-secondary);
+    }
+
+    .delete-btn {
       position: absolute;
-      top: 12px;
-      right: 12px;
+      top: 15px;
+      right: 15px;
       background: none;
       border: none;
       color: #ff453a;
-      font-size: 16px;
+      font-size: 18px;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-  <!-- BOUTON CAMERA DIRECT -->
-  <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
-  <button class="btn-scan" onclick="document.getElementById('camera').click()">
-    📸 SCANNER LA PLAQUE
-  </button>
+  <h1>🚗 Suivi Garage</h1>
 
-  <!-- PLAQUE -->
-  <div class="plaque-box">
-    <input type="text" id="plaqueInput" placeholder="PLAQUE (EX: AB-123-CD)">
+  <!-- Formulaire d'ajout -->
+  <div class="glass-card">
+    <h2>Nouveau Véhicule</h2>
+
+    <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
+    <button type="button" class="btn btn-blue" onclick="document.getElementById('camera').click()">
+      📸 Scanner la plaque
+    </button>
+
+    <label>Plaque d'immatriculation</label>
+    <input type="text" id="plaqueInput" placeholder="ex: AB-123-CD">
+
+    <label>Sélectionner les opérations</label>
+    <div class="categories-grid" id="categoriesContainer"></div>
+
+    <!-- Ajouter sa propre catégorie -->
+    <div class="add-cat-box">
+      <input type="text" id="customCatInput" placeholder="Autre opération (ex: Courroie)">
+      <button type="button" class="btn btn-outline" style="width: auto; margin:0;" onclick="ajouterNouvelleCategorie()">+</button>
+    </div>
+
+    <label>Remarques / Détails supplémentaires</label>
+    <textarea id="tachesInput" rows="2" placeholder="Informations complémentaires..."></textarea>
+
+    <button type="button" class="btn btn-green" onclick="enregistrerVehicule()">Enregistrer le véhicule</button>
   </div>
 
-  <!-- TÂCHES RAPIDES EN 1 CLIC -->
-  <div class="grid-fast" id="gridTaches"></div>
-
-  <!-- VALIDER -->
-  <button class="btn-save" onclick="validerFast()">⚡ ENREGISTRER</button>
-
-  <!-- RECHERCHE RAPIDE -->
-  <div class="search-bar">
-    <input type="text" id="searchInput" placeholder="🔍 Chercher une plaque..." oninput="afficherLister()" style="font-size:15px; padding:10px;">
+  <!-- Section Tri & Recherche -->
+  <div class="glass-card" style="padding: 12px;">
+    <input type="text" id="searchInput" placeholder="🔍 Rechercher une plaque..." oninput="afficherVehicules()">
+    <label style="margin-top: 10px;">Filtrer par opération :</label>
+    <div class="filter-bar" id="filterBar"></div>
   </div>
 
-  <!-- HISTORIQUE -->
-  <div id="liste"></div>
+  <h2>Historique des véhicules</h2>
+  <div id="listeVehicules"></div>
 
   <script>
-    // Liste des tâches courantes au garage
-    const TACHES_DEFAULT = ["Vidange", "Freins", "Pneus", "Révision", "Bougies", "Distribution"];
-    let tachesSelectionnees = [];
+    // Liste par défaut des catégories
+    let categoriesList = ["Vidange", "Freins", "Pneus", "Révision", "Distribution"];
+    let selectedCategories = [];
+    let filtreActif = "TOUS";
 
+    // 1. Initialisation
     function init() {
-      renderTaches();
-      afficherLister();
+      const savedCats = JSON.parse(localStorage.getItem('garage_categories'));
+      if (savedCats) categoriesList = savedCats;
+
+      renderCategories();
+      renderFilters();
+      afficherVehicules();
     }
 
-    function renderTaches() {
-      const container = document.getElementById('gridTaches');
-      container.innerHTML = TACHES_DEFAULT.map(t => `
-        <div class="chip-btn ${tachesSelectionnees.includes(t) ? 'selected' : ''}" onclick="toggleTache('${t}')">
-          ${tachesSelectionnees.includes(t) ? '✓ ' : ''}${t}
+    // 2. Affichage des catégories sélectionnables
+    function renderCategories() {
+      const container = document.getElementById('categoriesContainer');
+      container.innerHTML = categoriesList.map(cat => `
+        <div class="cat-pill ${selectedCategories.includes(cat) ? 'active' : ''}" onclick="toggleCategory('${cat}')">
+          ${selectedCategories.includes(cat) ? '✓ ' : ''}${cat}
         </div>
       `).join('');
     }
 
-    function toggleTache(tache) {
-      if (tachesSelectionnees.includes(tache)) {
-        tachesSelectionnees = tachesSelectionnees.filter(item => item !== tache);
+    function toggleCategory(cat) {
+      if (selectedCategories.includes(cat)) {
+        selectedCategories = selectedCategories.filter(c => c !== cat);
       } else {
-        tachesSelectionnees.push(tache);
+        selectedCategories.push(cat);
       }
-      renderTaches();
+      renderCategories();
     }
 
-    // OCR CAMERA
+    function ajouterNouvelleCategorie() {
+      const input = document.getElementById('customCatInput');
+      const val = input.value.trim();
+      if (val && !categoriesList.includes(val)) {
+        categoriesList.push(val);
+        selectedCategories.push(val);
+        localStorage.setItem('garage_categories', JSON.stringify(categoriesList));
+        input.value = "";
+        renderCategories();
+        renderFilters();
+      }
+    }
+
+    // 3. Affichage des filtres
+    function renderFilters() {
+      const filterBar = document.getElementById('filterBar');
+      const filtres = ["TOUS", ...categoriesList];
+      filterBar.innerHTML = filtres.map(f => `
+        <div class="filter-chip ${filtreActif === f ? 'active' : ''}" onclick="filtrerPar('${f}')">
+          ${f}
+        </div>
+      `).join('');
+    }
+
+    function filtrerPar(cat) {
+      filtreActif = cat;
+      renderFilters();
+      afficherVehicules();
+    }
+
+    // 4. Lecture OCR de la plaque
     document.getElementById('camera').addEventListener('change', function(e) {
       const file = e.target.files[0];
       if (!file) return;
 
-      const input = document.getElementById('plaqueInput');
-      input.value = "LECTURE...";
+      const plaqueInput = document.getElementById('plaqueInput');
+      plaqueInput.value = "Analyse...";
 
       Tesseract.recognize(file, 'eng')
         .then(({ data: { text } }) => {
-          const nettoye = text.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
-          input.value = nettoye || text.trim();
+          const texteNettoye = text.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+          plaqueInput.value = texteNettoye || text.trim();
         })
-        .catch(() => { input.value = ""; });
+        .catch(() => {
+          plaqueInput.value = "";
+          alert("Erreur lors de la lecture.");
+        });
     });
 
-    // SAUVEGARDE EN 1 CLIC
-    function validerFast() {
+    // 5. Enregistrement du véhicule
+    function enregistrerVehicule() {
       const plaque = document.getElementById('plaqueInput').value.trim();
-      if (!plaque) return alert("Plaque vide !");
+      const details = document.getElementById('tachesInput').value.trim();
+
+      if (!plaque) {
+        alert("Veuillez saisir une plaque d'immatriculation.");
+        return;
+      }
+
+      const tasks = selectedCategories.map(cat => ({ title: cat, done: true }));
+      if (details) {
+        tasks.push({ title: details, done: true });
+      }
 
       const vehicule = {
         id: Date.now(),
         plaque: plaque,
-        taches: tachesSelectionnees.length > 0 ? tachesSelectionnees : ["Contrôle général"],
-        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        categories: selectedCategories,
+        tasks: tasks,
+        date: new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })
       };
 
-      const data = JSON.parse(localStorage.getItem('garage_fast')) || [];
-      data.unshift(vehicule);
-      localStorage.setItem('garage_fast', JSON.stringify(data));
+      const mecanoData = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
+      mecanoData.unshift(vehicule);
+      localStorage.setItem('garage_vehicules', JSON.stringify(mecanoData));
 
-      // Reset express
       document.getElementById('plaqueInput').value = "";
-      tachesSelectionnees = [];
-      renderTaches();
-      afficherLister();
+      document.getElementById('tachesInput').value = "";
+      selectedCategories = [];
+      renderCategories();
+      afficherVehicules();
     }
 
-    function afficherLister() {
-      const container = document.getElementById('liste');
+    // 6. Affichage et filtrage de la liste
+    function afficherVehicules() {
+      const container = document.getElementById('listeVehicules');
       const search = document.getElementById('searchInput').value.toUpperCase();
-      let data = JSON.parse(localStorage.getItem('garage_fast')) || [];
+      let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
 
-      if (search) {
-        data = data.filter(v => v.plaque.includes(search));
+      if (filtreActif !== "TOUS") {
+        list = list.filter(v => v.categories && v.categories.includes(filtreActif));
       }
 
-      container.innerHTML = data.map(v => `
-        <div class="card">
-          <button class="del-btn" onclick="supprimer(${v.id})">✕</button>
-          <span class="plaque-tag">${v.plaque}</span>
-          <span class="date-text">${v.date}</span>
-          <div class="tags-container">
-            ${v.taches.map(t => `<span class="tag">✓ ${t}</span>`).join('')}
-          </div>
+      if (search) {
+        list = list.filter(v => v.plaque.includes(search));
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = `<p style="text-align:center; color: var(--text-secondary); margin-top:20px;">Aucun véhicule trouvé.</p>`;
+        return;
+      }
+
+      container.innerHTML = list.map(v => `
+        <div class="glass-card vehicle-card">
+          <button class="delete-btn" onclick="supprimerVehicule(${v.id})">✕</button>
+          <div class="plaque-badge">${v.plaque}</div>
+          <div style="font-size: 12px; color: var(--text-secondary); margin-top: 6px;">${v.date}</div>
+          
+          <ul class="task-list">
+            ${v.tasks.map((t, idx) => `
+              <li class="task-item ${t.done ? 'done' : ''}">
+                <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone(${v.id}, ${idx})">
+                <span>${t.title}</span>
+              </li>
+            `).join('')}
+          </ul>
         </div>
       `).join('');
     }
 
-    function supprimer(id) {
-      let data = JSON.parse(localStorage.getItem('garage_fast')) || [];
-      data = data.filter(v => v.id !== id);
-      localStorage.setItem('garage_fast', JSON.stringify(data));
-      afficherLister();
+    function toggleTaskDone(vehiculeId, taskIdx) {
+      let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
+      const v = list.find(item => item.id === vehiculeId);
+      if (v) {
+        v.tasks[taskIdx].done = !v.tasks[taskIdx].done;
+        localStorage.setItem('garage_vehicules', JSON.stringify(list));
+        afficherVehicules();
+      }
+    }
+
+    function supprimerVehicule(id) {
+      if (confirm("Supprimer ce véhicule de l'historique ?")) {
+        let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
+        list = list.filter(v => v.id !== id);
+        localStorage.setItem('garage_vehicules', JSON.stringify(list));
+        afficherVehicules();
+      }
     }
 
     init();
