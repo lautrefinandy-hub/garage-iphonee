@@ -168,7 +168,7 @@
       border-color: var(--accent-orange);
     }
 
-    /* Séparateur / En-tête de date style iOS */
+    /* En-tête de date */
     .date-header {
       font-size: 15px;
       font-weight: 700;
@@ -215,9 +215,17 @@
     .task-item {
       display: flex;
       align-items: center;
+      justify-content: space-between;
       gap: 10px;
-      padding: 6px 0;
+      padding: 8px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .task-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
     }
 
     .task-item input[type="checkbox"] {
@@ -226,9 +234,37 @@
       accent-color: var(--accent-green);
     }
 
-    .task-item.done {
+    /* Ne raye PAS par défaut, uniquement quand c'est coché */
+    .task-item.done span {
       text-decoration: line-through;
       color: var(--text-secondary);
+    }
+
+    .delete-task-btn {
+      background: none;
+      border: none;
+      color: #ff453a;
+      font-size: 14px;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+
+    .add-task-history {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .add-task-history input {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+
+    .add-task-history button {
+      padding: 8px 14px;
+      font-size: 14px;
+      width: auto;
+      margin: 0;
     }
 
     .delete-btn {
@@ -378,7 +414,6 @@
         });
     });
 
-    // Formater la date pour l'en-tête (ex: "Aujourd'hui", "Hier", "Mercredi 9 septembre")
     function formaterDateGroupe(dateIso) {
       const dateVehicule = new Date(dateIso);
       const aujourdhui = new Date();
@@ -405,9 +440,10 @@
         return;
       }
 
-      const tasks = selectedCategories.map(cat => ({ title: cat, done: true }));
+      // Par défaut, les tâches sont non cochées (à faire)
+      const tasks = selectedCategories.map(cat => ({ title: cat, done: false }));
       if (details) {
-        tasks.push({ title: details, done: true });
+        tasks.push({ title: details, done: false });
       }
 
       const maintenant = new Date();
@@ -416,7 +452,7 @@
         plaque: plaque,
         categories: selectedCategories,
         tasks: tasks,
-        timestamp: maintenant.getTime(), // Pour le tri chronologique parfait
+        timestamp: maintenant.getTime(),
         heure: maintenant.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
       };
 
@@ -436,21 +472,17 @@
       const search = document.getElementById('searchInput').value.toUpperCase();
       let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
 
-      // Migration si anciennes données sans timestamp
       list = list.map(v => {
         if (!v.timestamp) v.timestamp = v.id || Date.now();
         return v;
       });
 
-      // Tri du plus récent au plus ancien
       list.sort((a, b) => b.timestamp - a.timestamp);
 
-      // Filtre par catégorie
       if (filtreActif !== "TOUS") {
         list = list.filter(v => v.categories && v.categories.includes(filtreActif));
       }
 
-      // Filtre par recherche
       if (search) {
         list = list.filter(v => v.plaque.includes(search));
       }
@@ -460,14 +492,12 @@
         return;
       }
 
-      // Regroupement par jour
       let html = "";
       let dernierGroupe = "";
 
       list.forEach(v => {
         const groupeDate = formaterDateGroupe(v.timestamp);
 
-        // Si on change de jour, on crée un nouvel en-tête de date
         if (groupeDate !== dernierGroupe) {
           html += `<div class="date-header">📅 ${groupeDate}</div>`;
           dernierGroupe = groupeDate;
@@ -484,11 +514,20 @@
             <ul class="task-list">
               ${v.tasks.map((t, idx) => `
                 <li class="task-item ${t.done ? 'done' : ''}">
-                  <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone(${v.id}, ${idx})">
-                  <span>${t.title}</span>
+                  <div class="task-left">
+                    <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTaskDone(${v.id}, ${idx})">
+                    <span>${t.title}</span>
+                  </div>
+                  <button class="delete-task-btn" onclick="supprimerTache(${v.id}, ${idx})">✕</button>
                 </li>
               `).join('')}
             </ul>
+
+            <!-- Ajout rapide d'une tâche spécifique à ce véhicule -->
+            <div class="add-task-history">
+              <input type="text" id="newTaskInput-${v.id}" placeholder="Ajouter une opération...">
+              <button class="btn btn-outline" onclick="ajouterTacheDansHistorique(${v.id})">+</button>
+            </div>
           </div>
         `;
       });
@@ -501,6 +540,31 @@
       const v = list.find(item => item.id === vehiculeId);
       if (v) {
         v.tasks[taskIdx].done = !v.tasks[taskIdx].done;
+        localStorage.setItem('garage_vehicules', JSON.stringify(list));
+        afficherVehicules();
+      }
+    }
+
+    function ajouterTacheDansHistorique(vehiculeId) {
+      const input = document.getElementById(`newTaskInput-${vehiculeId}`);
+      const val = input.value.trim();
+      if (!val) return;
+
+      let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
+      const v = list.find(item => item.id === vehiculeId);
+      if (v) {
+        v.tasks.push({ title: val, done: false });
+        if (!v.categories.includes(val)) v.categories.push(val);
+        localStorage.setItem('garage_vehicules', JSON.stringify(list));
+        afficherVehicules();
+      }
+    }
+
+    function supprimerTache(vehiculeId, taskIdx) {
+      let list = JSON.parse(localStorage.getItem('garage_vehicules')) || [];
+      const v = list.find(item => item.id === vehiculeId);
+      if (v) {
+        v.tasks.splice(taskIdx, 1);
         localStorage.setItem('garage_vehicules', JSON.stringify(list));
         afficherVehicules();
       }
